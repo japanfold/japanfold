@@ -1,9 +1,10 @@
 # Embeddings
 
-`POST /v1/embeddings` turns one or more protein sequences into **ESMC protein
-language-model embeddings** — numeric vectors you can feed to a classifier,
-clustering, similarity search or any downstream model. It returns a **job** to
-poll (see [Jobs](jobs.md)); there is no structure prediction and no MSA.
+`POST /v1/embeddings` turns one or more protein sequences into **protein
+language-model embeddings** (ESMC or SaProt) — numeric vectors you can feed to
+a classifier, clustering, similarity search or any downstream model. It returns
+a **job** to poll (see [Jobs](jobs.md)); there is no structure prediction and
+no MSA.
 
 ## Two kinds of vector
 
@@ -58,15 +59,18 @@ curl -s -X POST https://api.japanfold.com/v1/embeddings \
 
 ## Models
 
-Set `model` (default `esmc-600m`). All three are ESMC; larger is a stronger
-representation at more compute per sequence. See
-[Models & limits](models-and-limits.md).
+Set `model` (default `esmc-600m`). Larger is a stronger representation at more
+compute per sequence. SaProt is trained on sequence + structure tokens; this
+API runs it sequence-only (structure tokens masked), which the 1.3B variant is
+explicitly trained for. See [Models & limits](models-and-limits.md).
 
 | `id` | Name | Use it for |
 |---|---|---|
 | `esmc-300m` | ESMC 300M | Quickest embeddings, still a strong general-purpose representation. |
 | `esmc-600m` | ESMC 600M | The balanced default. |
 | `esmc-6b` | ESMC 6B | The strongest representation, at higher compute cost. |
+| `saprot-650m` | SaProt 650M | Structure-aware model (sequence-only here); strong alternative to ESMC. |
+| `saprot-1.3b` | SaProt 1.3B | Largest SaProt; trained to work sequence-only. |
 
 ## Parameters
 
