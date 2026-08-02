@@ -1,8 +1,8 @@
 # Examples
 
-End-to-end, copy-pasteable examples in **curl** and **Python**, for the three
-common tasks: a plain fold, a co-fold with affinity, and a binder design. All use
-the async submit → poll → download flow.
+End-to-end, copy-pasteable examples in **curl** and **Python**, for the common
+tasks: a plain fold, a co-fold with affinity, and binder design (BoltzGen and
+RFdiffusion3). All use the async submit → poll → download flow.
 
 ```
 BASE = https://api.japanfold.com
@@ -194,6 +194,35 @@ with httpx.Client(base_url=BASE, timeout=300) as c:
         job = c.get(f"/v1/jobs/{job['id']}").json()
     results = c.get(f"/v1/jobs/{job['id']}/results").json()
     print(results.get("designs"))
+    with open("designs.zip", "wb") as f:
+        f.write(c.get(results["archive_url"]).content)
+```
+
+## Binder design against a structure (RFdiffusion3)
+
+Same flow, but the input is a pasted **structure** plus a **contig** saying what
+stays fixed vs. what gets designed. Results are unranked mmCIFs (see
+[Designs](designs.md)).
+
+### Python: httpx
+
+```python
+import time, httpx
+
+BASE = "https://api.japanfold.com"
+structure = open("target.pdb").read()  # chain A holds the target
+
+with httpx.Client(base_url=BASE, timeout=300) as c:
+    job = c.post("/v1/designs", json={
+        "protocol": "rfd3-binder", "name": "my-rfd3-binders",
+        "structure": structure,
+        "contig": "A1-150,60-80",  # keep target residues 1-150, design a 60-80 aa binder
+        "params": {"num_designs": 4, "num_timesteps": 100}}).json()
+    while job["status"] not in ("succeeded", "failed", "canceled"):
+        time.sleep(10)
+        job = c.get(f"/v1/jobs/{job['id']}").json()
+    results = c.get(f"/v1/jobs/{job['id']}/results").json()
+    print([d["id"] for d in results.get("designs", [])])
     with open("designs.zip", "wb") as f:
         f.write(c.get(results["archive_url"]).content)
 ```

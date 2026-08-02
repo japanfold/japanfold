@@ -2,13 +2,14 @@
 name: japanfold
 description: >-
   Predict 3D biomolecular structures and binding affinity (Boltz-2, ESMFold2,
-  Protenix, OpenDDE) and design de-novo binders/proteins (BoltzGen) via
-  JapanFold — a free, public, Tenstorrent-accelerated HTTP API. Use to fold a
-  protein or complex, co-fold a protein with a ligand and get affinity, fold an
-  antibody-antigen complex, design nanobody/antibody/peptide/miniprotein binders
-  against a target, turn a sequence into a PDB/mmCIF structure, or compute ESMC
-  protein embeddings (per-residue + pooled vectors). No API key or local GPU
-  needed.
+  Protenix, OpenDDE) and design de-novo binders/proteins (BoltzGen,
+  RFdiffusion3) via JapanFold — a free, public, Tenstorrent-accelerated HTTP
+  API. Use to fold a protein or complex, co-fold a protein with a ligand and
+  get affinity, fold an antibody-antigen complex, design
+  nanobody/antibody/peptide/miniprotein binders against a target, scaffold a
+  functional motif or design a binder against a pasted PDB/mmCIF structure,
+  turn a sequence into a PDB/mmCIF structure, or compute ESMC/SaProt protein
+  embeddings (per-residue + pooled vectors). No API key or local GPU needed.
 when_to_use: >-
   When the user wants to fold/predict a protein or complex structure, estimate
   protein–ligand binding affinity, design binders against a target, or compute
@@ -31,8 +32,9 @@ allowed-tools:
 
 # JapanFold — hosted structure prediction & binder design
 
-JapanFold runs Boltz-2 / ESMFold2 / Protenix (structure + affinity) and BoltzGen
-(binder design) on Tenstorrent hardware behind a **free public HTTP API**. You
+JapanFold runs Boltz-2 / ESMFold2 / Protenix (structure + affinity), BoltzGen
+and RFdiffusion3 (binder/protein design), and ESMC / SaProt (embeddings) on
+Tenstorrent hardware behind a **free public HTTP API**. You
 call it as an async job — **submit → poll → download** — over plain HTTPS against
 `https://api.japanfold.com`. No API key, no model to install, no local GPU.
 
@@ -117,7 +119,27 @@ Protocols: `protein-anything`, `peptide-anything`, `nanobody-anything`,
 `antibody-anything`, `protein-small_molecule`, `protein-redesign`. Poll the same
 way; `/v1/jobs/{id}/results` returns the ranked designs.
 
-## Embed sequences (ESMC)
+## Design against a structure (RFdiffusion3)
+
+Same endpoint, but the input is a pasted **structure** plus a **contig** (what
+stays fixed vs. what gets designed):
+
+```bash
+curl -s -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
+  -d '{"protocol":"rfd3-binder","structure":"<PDB or mmCIF text>","contig":"A1-150,60-80","params":{"num_designs":4,"num_timesteps":100}}'
+```
+
+- Contig grammar: `A1-150` keeps target chain A residues 1–150 fixed; a bare
+  number designs that many new residues. `"A1-150,60-80"` = keep the 150-residue
+  target, design a 60–80 residue binder.
+- Protocols: `rfd3-binder` (protein target), `rfd3-scaffold` (build around a
+  fixed motif), `rfd3-na-binder` (DNA/RNA target).
+- Caps: ≤ 5 designs, ≤ 200 timesteps, structure ≤ 700k chars (~1000-residue PDB).
+- Results are **unranked** mmCIFs (no refold/filter scores). To sanity-check a
+  design, refold its sequence against the target with `POST /v1/predictions`
+  and read `iptm`.
+
+## Embed sequences (ESMC / SaProt)
 
 Turn protein sequences into language-model vectors — no structure, no MSA. Same
 submit → poll → download flow:
@@ -128,8 +150,9 @@ curl -s -X POST $BASE/v1/embeddings -H 'Content-Type: application/json' \
 # or many at once: "sequences":[{"id":"a","sequence":"..."},{"id":"b","sequence":"..."}]
 ```
 
-- **Models:** `esmc-300m`, `esmc-600m` (default), `esmc-6b` — larger is a stronger
-  representation at more compute.
+- **Models:** `esmc-300m`, `esmc-600m` (default), `esmc-6b`, `saprot-650m`,
+  `saprot-1.3b` — larger is a stronger representation at more compute. SaProt is
+  structure-aware but runs sequence-only here (the 1.3B is trained for that).
 - `params`: `pool` (`mean`/`max`/`cls`, default `mean`), `format` (`npz` = per-residue
   `[L, d_model]` + pooled `[d_model]` per sequence; `parquet` = pooled table only), `fast`.
 - Results carry `kind: "embed"`, `d_model`, a `sequences` list and `artifacts` URLs;
@@ -147,7 +170,8 @@ named local directory, and tell the user the absolute path where you saved it.
 ## Limits & notes
 
 - Free public demo caps (same as the web app): **≤ 1024 residues/structure,
-  ≤ 10 chains & ligands/complex, ≤ 10 structures/run, ≤ 10 designs/request**,
+  ≤ 10 chains & ligands/complex, ≤ 10 structures/run, ≤ 10 designs/request
+  (BoltzGen) or ≤ 5 (RFdiffusion3)**,
   plus per-IP rate limits. Over a cap → `400`; at capacity → `429` (respect
   `Retry-After`). Numeric params are clamped to range.
 - Errors are RFC 9457 problem+json (`title`, `detail`).

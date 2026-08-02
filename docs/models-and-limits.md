@@ -42,14 +42,18 @@ if you just need to know the service is up.
 
 ### Embedding models
 
-`POST /v1/embeddings` uses the ESMC protein language model. Larger is a stronger
-representation at more compute per sequence. See [Embeddings](embeddings.md).
+`POST /v1/embeddings` runs protein language models — ESMC (sequence-only) and
+SaProt (trained on sequence + structure tokens; sequence-only here). Larger is
+a stronger representation at more compute per sequence. See
+[Embeddings](embeddings.md).
 
 | `id` | Name | Notes |
 |---|---|---|
 | `esmc-300m` | ESMC 300M | Quickest; strong general-purpose representation. |
 | `esmc-600m` | ESMC 600M | The balanced default. |
 | `esmc-6b` | ESMC 6B | Strongest representation, highest compute cost. |
+| `saprot-650m` | SaProt 650M | Structure-aware model, run sequence-only in this demo. |
+| `saprot-1.3b` | SaProt 1.3B | Largest SaProt; trained to work sequence-only. |
 
 ## Prediction parameters
 
@@ -66,15 +70,28 @@ Sent as `params` on `POST /v1/predictions`. Out-of-range values are clamped.
 
 ## Design protocols & parameters
 
-Protocols for `POST /v1/designs`: `protein-anything`, `peptide-anything`,
+Two engines share `POST /v1/designs`. **BoltzGen** protocols take a YAML `spec`
+and return ranked designs: `protein-anything`, `peptide-anything`,
 `nanobody-anything`, `antibody-anything`, `protein-small_molecule`,
-`protein-redesign`. See [Designs](designs.md) for what each does.
+`protein-redesign`. **RFdiffusion3** protocols take a pasted `structure` plus a
+`contig` string and return unranked all-atom designs: `rfd3-binder`,
+`rfd3-scaffold`, `rfd3-na-binder`. See [Designs](designs.md) for what each does.
+
+BoltzGen parameters:
 
 | Key | Type | Default | Range | Notes |
 |---|---|---|---|---|
 | `num_designs` | int | `10` | 1–10 | Binders to generate before filtering. |
 | `budget` | int | `10` | 1–10 | Top ranked designs to keep after filtering. |
 | `fast` | bool | `true` | - | Higher throughput, may be slightly less accurate. |
+
+RFdiffusion3 parameters:
+
+| Key | Type | Default | Range | Notes |
+|---|---|---|---|---|
+| `num_designs` | int | `4` | 1–5 | Independent designs for the same spec. |
+| `num_timesteps` | int | `100` | 4–200 | Diffusion steps per design; 200 is cleanest, fewer is faster. |
+| `seed` | int | `42` | 0–2³¹−1 | Noise seed. |
 
 ## Embedding parameters
 
@@ -107,8 +124,11 @@ fair and available for everyone.
 
 | Limit | Value |
 |---|---|
-| `max_designs` | 10 |
+| `max_designs` (BoltzGen) | 10 |
 | `max_budget` | 10 |
+| `max_rfd3_designs` (per RFdiffusion3 run) | 5 |
+| `max_rfd3_timesteps` | 200 |
+| `max_structure_chars` (pasted target structure) | 700000 |
 
 **Embeddings**
 
