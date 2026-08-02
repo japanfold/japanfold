@@ -1,11 +1,15 @@
 # Designs
 
-`POST /v1/designs` designs de-novo proteins against a target. Two engines share
+`POST /v1/designs` designs de-novo proteins against a target. Two models share
 the endpoint: [BoltzGen](https://github.com/jwohlwend/boltz) (target = a
 sequence or ligand, designs come back **ranked** by predicted confidence) and
 RFdiffusion3 (target = a pasted **structure** plus a contig string, designs
 come back **unranked**). Both return a **job** to poll, exactly like
 [predictions](jobs.md).
+
+The protocol implies the model. You may pass `model` explicitly
+(`boltzgen` or `rfd3` — the same vocabulary as the CLI's `--model`), but it
+must match the protocol's model; a mismatch is a 400.
 
 ## BoltzGen: binders against a sequence or ligand
 
