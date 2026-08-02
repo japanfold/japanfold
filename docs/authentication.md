@@ -2,7 +2,7 @@
 
 The API is **public and keyless**. Every endpoint works with no credentials.
 Just send the request. This is the same access the web app at
-[japanfold.com](https://japanfold.com) uses, with the same limits.
+[demo.japanfold.com](https://demo.japanfold.com) uses, with the same limits.
 
 ```bash
 # No auth needed:
