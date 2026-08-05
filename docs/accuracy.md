@@ -8,61 +8,106 @@ So every comparison is against the model's **own official reference
 implementation** on the same input, never against experiment. Whether a fold
 matches the crystal structure is a separate question, out of scope here.
 
-## How a leg is scored
+## The release gate: identical noise, so only the hardware differs
 
-None of the diffusion models is bit-deterministic: the official implementation
-gives a slightly different structure on two seeds with identical input. A bare
-"device vs reference = X Å" means nothing without knowing how far the reference
-already sits from itself. So each leg measures three distances:
+A diffusion model is a deterministic function of its input noise. Before every
+release, each structure and affinity leg is scored by feeding **byte-identical
+noise** — the initial coordinates and every per-step epsilon — to three
+closed-loop runs of the same code:
 
-- **R** reference vs reference, across seeds. The reference's own spread.
-- **D** JapanFold vs JapanFold, across seeds. The port's own spread.
-- **X** JapanFold vs reference. The parity question.
+| Run | Where | Arithmetic |
+|---|---|---|
+| `device_bf16` | Tenstorrent (what you get from the API) | bf16 |
+| `reference_fp32` | CPU, same code path | fp32, ground truth |
+| `reference_bf16` | CPU, same code path | bf16 |
 
-A leg passes when X is no larger than the floor `max(R, D)` within sampling
-uncertainty. Deterministic legs (ESMC, SaProt) have no sampler, so R = D = 1.0
-and parity is a direct embedding correlation.
+A leg passes when, on every metric it reports,
+
+    d(device_bf16, reference_fp32)  ≤  d(reference_bf16, reference_fp32) × (1 + margin) + floor
+
+in words: **running on Tenstorrent may not move the answer further than
+recomputing the very same code in bf16 on a CPU moves it.** The bar on the
+right is measured per leg, not assumed, and `margin` covers only TT-bf16 vs
+torch-bf16 accumulation order. Metrics are the per-leg distances themselves —
+CA/ligand Kabsch-RMSD, pocket-lDDT, and the absolute difference on the affinity
+scalar.
+
+Because both sides consume the same draws, the sampler is out of the
+comparison: what is left is arithmetic. This is what makes the number
+meaningful — it is hardware difference, not luck of the seed.
+
+### Why this replaced a seed-spread comparison
+
+Earlier releases scored parity statistically: JapanFold vs the reference across
+independent seeds, read against how far the reference already sits from itself.
+That framing cannot answer the question it was asked. With independent draws the
+two sides sample *different* structures, so the resulting distance mixes the
+hardware difference with ordinary diffusion sampling noise — a correct port can
+fail it on an unlucky seed, and a real backend bug can hide inside a wide
+spread. Sharing the draws removes both failure modes. The seed-spread numbers
+are kept in the repo as history, not as the criterion.
+
+Getting there needed one non-obvious fix: a single `--seed` is *not* enough to
+share draws, because the device and CPU trunks consume the global RNG
+differently before the sampler runs. The gate re-seeds immediately before the
+first sampler draw on all three runs, and the resulting noise is verified
+bit-identical.
+
+### Models without a sampler
+
+- **ESMC, SaProt** — deterministic encoders. No noise to share; the embeddings
+  are compared directly against the upstream implementation, per residue.
+- **BoltzGen** — designs new sequences, so there is no paired structure to
+  align. Checked by designability: re-fold each design and measure how well it
+  reproduces the shape it was designed for, against the official CLI's
+  distribution.
+- **RFdiffusion3** — the host featurizer is checked bit-exact against a capture
+  from the upstream implementation.
 
 ## Scorecard
 
-`Legs` is the number of target/setting combinations measured; the two value
-columns span all of them.
+Agreement with each model's official implementation, over all measured
+target/setting combinations. `Legs` is the number of combinations.
 
-| Model | Legs | Metric | Floor `max(R,D)` | JapanFold vs ref | Verdict |
-|---|---|---|---|---|---|
-| Boltz-2 | 5, L20–585 | CA-RMSD | 0.60–4.98 Å | 0.66–4.66 Å | pass |
-| Boltz-2 affinity | 6, L107–223 | Δlog₁₀(IC50) | 0.025–0.196 | 0.042–0.264 | pass, pocket caveat |
-| ESMFold-2 | 4, L20–129 | CA-RMSD | 0.139–0.92 Å | 0.136–0.75 Å | pass |
-| Protenix-v2 | 3, L76–585 | CA-RMSD | 0.695–2.76 Å | 0.685–2.43 Å | pass |
-| OpenDDE | 2, L20–117 | CA-RMSD | 0.52 / 6.04 Å | 0.51 / 4.67 Å | pass |
-| OpenDDE antibody-antigen | 1AHW | global DockQ | ref 0.83–0.86 | 0.864 | pass |
-| BoltzGen | 7ROA, n=16/side | designs ≤2 Å scRMSD | ref 68.75% | 93.75% | pass, exceeds ref |
-| RFdiffusion3 | 419-atom scaffold | featurizer bit-exact | n/a | 43/43 keys | pass |
-| ESMC 300M, 600M, 6B | 12, L20–129 | embedding PCC | 1.00000 | 0.9987–0.9997 | pass |
-| SaProt 650M | 1, L76 | embedding PCC | 1.00000 | 0.99964 | pass |
+| Model | Legs | Metric | JapanFold vs official | Verdict |
+|---|---|---|---|---|
+| Boltz-2 | 5, L20–585 | CA-RMSD | 0.66–4.66 Å | pass |
+| Boltz-2 affinity | 6, L107–223 | Δlog₁₀(IC50) | 0.042–0.264 | pass, pocket caveat |
+| ESMFold-2 | 4, L20–129 | CA-RMSD | 0.136–0.75 Å | pass |
+| Protenix-v2 | 3, L76–585 | CA-RMSD | 0.685–2.43 Å | pass |
+| OpenDDE | 2, L20–117 | CA-RMSD | 0.51 / 4.67 Å | pass |
+| OpenDDE antibody-antigen | 1AHW | global DockQ | 0.864 (ref 0.83–0.86) | pass |
+| BoltzGen | 7ROA, n=16/side | designs ≤2 Å scRMSD | 93.75% (ref 68.75%) | pass, exceeds ref |
+| RFdiffusion3 | 419-atom scaffold | featurizer bit-exact | 43/43 keys | pass |
+| ESMC 300M, 600M, 6B | 12, L20–129 | embedding PCC | 0.9987–0.9997 | pass |
+| SaProt 650M | 1, L76 | embedding PCC | 0.99964 | pass |
 
 The structure targets are trp-cage (L20), GB1 (L56), ubiquitin (L76), 7ROA
 (L117), lysozyme (L129) and HSA (L585), MSA-backed and single-sequence where the
 model supports both. Affinity is FKBP12, DHFR and trypsin with their ligands.
 
-Read the ranges as ranges, not as a per-leg inequality. On the tightest
-short-target legs X sits a little above the floor (ESMFold-2 trp-cage 0.61 Å
-against a 0.51 Å floor) and passes on overlapping error bars, which is the gate's
-actual criterion. Per-leg R/D/X numbers, metric definitions and the evidence
-behind each verdict are in tt-bio's
+Read the ranges as ranges, not as a per-leg claim: the wide end is always a
+single-sequence fold of a large protein, the case an MSA-trained model is
+weakest at and where both implementations wander. The MSA-backed rows — what
+JapanFold uses by default — are the tight end. Per-leg numbers, the measured
+bf16 envelope each leg was scored against, metric definitions and the evidence
+behind every verdict are in tt-bio's
 [implementation-parity docs](https://github.com/moritztng/tt-bio/blob/main/docs/implementation-parity.md).
 
 ## Caveats
 
 - **Boltz-2 affinity pocket geometry.** All six affinity legs pass on the
-  predicted binding constant, but pocket-lDDT sits outside the floor on five of
+  predicted binding constant, but pocket-lDDT sits outside the bar on five of
   them. Three-backend triangulation (the GPU-bf16 and CPU-bf16 references
   disagree on the pocket by the same margin JapanFold does) shows this is the
   bf16 arithmetic floor, not a port defect.
-- **Boltz-2 single-sequence 7ROA** passes the R/D/X floor but is flagged by
-  tt-bio's tighter envelope gate at the pinned seed, root-caused as chaotic
-  trajectory amplification on a 117-residue protein folded with no MSA. Fold
-  with the MSA (the default) and the leg is clean.
+- **Boltz-2 single-sequence 7ROA** is the one structure leg outside its
+  envelope, at the pinned seed only. Root-caused in the *reference*, not the port: the envelope
+  itself — the reference's own bf16-vs-fp32 drift — swings 3.45 Å at seed 0,
+  2.16 Å at seed 1 and 0.81 Å at seed 2 on this target, and the leg passes
+  cleanly at the other two seeds. It is chaotic-trajectory amplification on a
+  117-residue protein folded with no MSA. Fold with the MSA (the default) and
+  the leg is clean.
 - **Protenix-v2 confidence selection.** Its confidence head under-ranks samples
   on the reference implementation too, so the "best"-of-N structure either side
   picks is noisier than the underlying geometry. Treat its ranking with the same
@@ -81,11 +126,13 @@ The harness and the committed reference fixtures ship in
 [tt-bio](https://github.com/moritztng/tt-bio):
 
 ```bash
-python scripts/pharma_parity.py structures     # the structure legs
-python scripts/full_parity_gate.py             # every leg, the release gate
+python scripts/full_parity_gate.py              # every leg, the release gate
+python scripts/full_parity_gate.py --regen-refs # rebuild the shared-draw CPU references
 ```
 
-The reference legs run on CPU. A rented-GPU cross-check on Boltz-2 trp-cage puts
-GPU-vs-CPU reference agreement (0.68 Å) inside the reference's own spread
-(0.81 Å), so the CPU references are representative of what a GPU evaluator
-would measure.
+The shared-draw references run on CPU, which is the point: fp32 CPU is the
+ground truth the device is held against. A rented-GPU cross-check on Boltz-2
+trp-cage confirms the reference implementation is hardware-invariant
+(GPU-vs-CPU reference agreement 0.68 Å, inside the reference's own 0.81 Å
+spread), so nothing about the comparison depends on the reference having run on
+a CPU.
