@@ -1,13 +1,13 @@
 # Errors
 
-Errors are returned as **RFC 9457 problem+json**. The body looks like:
+Errors come back as RFC 9457 problem+json:
 
 ```json
 {
   "type":   "https://japanfold.com/errors/invalid-input",
   "title":  "Invalid request",
   "status": 400,
-  "detail": "unknown model 'nope' — choose one of ['boltz2', 'esmfold2', 'esmfold2-fast', 'protenix-v2', 'opendde', 'opendde-abag'].",
+  "detail": "unknown model 'nope' — choose one of ['boltz2', 'esmfold2', 'esmfold2-fast', 'opendde', 'opendde-abag', 'protenix-v2'].",
   "instance": "/v1/predictions"
 }
 ```
@@ -31,9 +31,9 @@ Errors are returned as **RFC 9457 problem+json**. The body looks like:
 
 ## Handling 429 (at capacity)
 
-The service is a free demo on shared compute. When it is busy, or you exceed a
-submit/active-job quota, you get `429` with a `Retry-After` header (seconds).
-Wait that long and retry; back off if it repeats.
+When the service is busy, or you exceed a submit or active-job quota, you get
+`429` with a `Retry-After` header in seconds. Wait that long and retry, backing
+off if it repeats.
 
 ```bash
 resp=$(curl -s -D /tmp/h -o /tmp/b -w '%{http_code}' -X POST \

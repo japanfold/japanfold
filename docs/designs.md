@@ -1,11 +1,11 @@
 # Designs
 
 `POST /v1/designs` designs de-novo proteins against a target. Two engines share
-the endpoint: [BoltzGen](https://github.com/jwohlwend/boltz) (target = a
-sequence or ligand, designs come back **ranked** by predicted confidence) and
-RFdiffusion3 (target = a pasted **structure** plus a contig string, designs
-come back **unranked**). Both return a **job** to poll, exactly like
-[predictions](jobs.md).
+the endpoint: [BoltzGen](https://github.com/jwohlwend/boltz) takes a sequence or
+ligand target and returns designs **ranked** by predicted confidence;
+RFdiffusion3 takes a pasted **structure** plus a contig and returns them
+**unranked**. Both return a job to poll, exactly like a
+[prediction](predictions.md).
 
 ## BoltzGen: binders against a sequence or ligand
 
@@ -22,11 +22,10 @@ curl -s -X POST https://api.japanfold.com/v1/designs \
 
 - **`spec`** (required): a YAML design spec, the target plus the binder request.
   Same YAML dialect as the Boltz/BoltzGen inputs.
-- **`protocol`**: what to design (see below).
+- **`protocol`** (required): what to design.
+- **`params`**: `num_designs`, `budget`, `fast`. See
+  [Models & limits](models-and-limits.md#design-protocols-and-parameters).
 - **`name`**: optional label.
-- **`params`**: see below.
-
-### Protocols
 
 | `protocol` | Designs |
 |---|---|
@@ -37,24 +36,13 @@ curl -s -X POST https://api.japanfold.com/v1/designs \
 | `protein-small_molecule` | Protein binder with a binding-affinity step. |
 | `protein-redesign` | Re-design residues of an existing binder. |
 
-### Parameters
-
-| Param | Type | Default | Range | Notes |
-|---|---|---|---|---|
-| `num_designs` | int | 10 | 1–10 | Binders to generate before filtering. |
-| `budget` | int | 10 | 1–10 | Top ranked designs to keep after filtering. |
-| `fast` | bool | true | - | Higher throughput, may be slightly less accurate. |
-
-(See [Models & limits](models-and-limits.md) for the current ranges.)
-
 Submits accept the same `Idempotency-Key` and `Prefer: wait` headers as
-predictions. See [Predictions](predictions.md#retrying-safely-idempotency-key).
+predictions.
 
 ## RFdiffusion3: all-atom design against a structure
 
-RFdiffusion3 (RFD3) diffuses protein structure and sequence together, conditioned
-on a target **structure** you provide. The request carries the structure as text
-plus a **contig** string saying what to keep fixed and what to design:
+RFdiffusion3 diffuses protein structure and sequence together, conditioned on a
+target structure you provide:
 
 ```bash
 curl -s -X POST https://api.japanfold.com/v1/designs \
@@ -68,32 +56,30 @@ curl -s -X POST https://api.japanfold.com/v1/designs \
   }'
 ```
 
-- **`structure`** (required): the target as PDB or mmCIF **text** (paste the file
-  contents; up to 700,000 characters, about a 1,000-residue PDB).
+- **`structure`** (required): the target as PDB or mmCIF **text**. Paste the file
+  contents, up to 700,000 characters (about a 1,000-residue PDB).
 - **`contig`** (required): comma-separated segments. A chain-range like `A1-150`
   keeps those residues fixed; a bare number like `60-80` designs that many new
-  residues. `"A1-150,60-80"` reads: keep target chain A (150 residues), then
-  design a 60–80 residue binder.
-- **`params`**: `num_designs` (1–5, default 4), `num_timesteps` (4–200, default
-  100 — 200 is the cleanest, fewer is faster), `seed`.
-
-### RFD3 protocols
+  residues. So `"A1-150,60-80"` keeps target chain A, then designs a 60 to 80
+  residue binder.
+- **`params`**: `num_designs`, `num_timesteps`, `seed`. See
+  [Models & limits](models-and-limits.md#design-protocols-and-parameters).
 
 | `protocol` | Designs |
 |---|---|
 | `rfd3-binder` | Binder against a protein target structure. |
-| `rfd3-scaffold` | Scaffold around a fixed functional motif (list the motif residues, design between them). |
+| `rfd3-scaffold` | Scaffold around a fixed functional motif: list the motif residues, design between them. |
 | `rfd3-na-binder` | Binder against a fixed DNA or RNA structure. |
 
-RFD3 designs are **unranked**: there is no refold-and-filter step, so results
-are one mmCIF per design with no confidence scores. To check a design, fold its
-sequence back onto the target with a [prediction](predictions.md) and look at
-the interface confidence (`iptm`).
+RFdiffusion3 designs are unranked: there is no refold-and-filter step, so you get
+one mmCIF per design with no confidence scores. To check one, fold its sequence
+back onto the target with a [prediction](predictions.md) and read the interface
+confidence (`iptm`).
 
 ## Reading designs
 
-Poll `GET /v1/jobs/{id}` until `succeeded`, then `GET /v1/jobs/{id}/results`.
-The results carry the designs and downloadable structure artifacts;
-`GET /v1/jobs/{id}/archive` gives everything as one zip. See
-[Jobs → Results](jobs.md#results). A full worked example is in
-[Examples → Binder design](examples.md#binder-design).
+Poll `GET /v1/jobs/{id}` until `succeeded`, then read
+`GET /v1/jobs/{id}/results` for the designs and their structure artifacts, or
+`GET /v1/jobs/{id}/archive` for everything as one zip. See
+[Jobs → Results](jobs.md#results) and
+[Examples](examples.md#design-binders-boltzgen).

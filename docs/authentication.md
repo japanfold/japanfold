@@ -1,7 +1,7 @@
 # Authentication
 
-The API is **public and keyless**. Every endpoint works with no credentials.
-Just send the request. This is the same access the web app at
+The API is public and keyless. Every endpoint works with no credentials, so just
+send the request. This is the same access the web app at
 [demo.japanfold.com](https://demo.japanfold.com) uses, with the same limits.
 
 ```bash
@@ -27,16 +27,12 @@ by the JapanFold team; there's no self-serve signup yet.
 
 ## Ownership and quotas
 
-- **Keyless requests** are grouped and rate-limited per client IP (and per
-  session for the web app). JapanFold is a free public demo on shared compute,
-  so there are quotas on how much you can run at once — the same quotas for
-  everyone, key or no key.
-- **Keyed requests** are owned by your key instead. You can only list, poll,
-  cancel or delete jobs that belong to you (your IP/session for keyless use,
-  your key otherwise). Accessing someone else's job returns `404`.
-- The concrete numbers (active-job quotas, submit rates, structure/design size
-  caps) are in **[Models & limits](models-and-limits.md)** and, live, at
-  `GET /v1/models`.
+- **Keyless requests** are grouped and rate-limited per client IP, and per
+  session for the web app. Quotas are the same for everyone, key or no key.
+- **Keyed requests** are owned by your key instead. Either way you can only list,
+  poll, cancel or delete your own jobs; someone else's returns `404`.
+- The concrete numbers are on [Models & limits](models-and-limits.md) and, live,
+  at `GET /v1/models`.
 
 Over a cap you get `400`; at capacity you get `429` with a `Retry-After` header
 (see [Errors](errors.md)).

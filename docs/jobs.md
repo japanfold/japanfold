@@ -1,8 +1,8 @@
 # Jobs
 
-Predictions and designs both create a **job**. This is how you track it, read
-its output, and clean it up. All job endpoints are keyless; you can only reach
-jobs you own (see [Authentication](authentication.md)).
+Predictions, designs and embeddings all create a **job**. This is how you track
+it, read its output, and clean it up. All job endpoints are keyless; you can only
+reach jobs you own (see [Authentication](authentication.md)).
 
 ## The Job object
 
@@ -10,7 +10,7 @@ jobs you own (see [Authentication](authentication.md)).
 {
   "object": "job",
   "id": "6f1069cb2d665cb939f8baaa3cd261a6",
-  "kind": "predict",              // "predict" | "design"
+  "kind": "predict",              // "predict" | "design" | "embed"
   "status": "running",            // queued | running | succeeded | failed | canceled
   "name": "myprotein",
   "model": "boltz2",              // null for designs
@@ -33,9 +33,9 @@ jobs you own (see [Authentication](authentication.md)).
 curl -s https://api.japanfold.com/v1/jobs/$JOB
 ```
 
-Add `Prefer: wait=<seconds>` to block until the job finishes (or the timeout
-elapses, capped at 60s; bare `wait` holds 25s) instead of returning immediately,
-handy for short jobs:
+Add `Prefer: wait=<seconds>` to block until the job finishes instead of returning
+immediately (see
+[Predictions](predictions.md#waiting-inline-the-prefer-wait-header)):
 
 ```bash
 curl -s -H 'Prefer: wait=60' https://api.japanfold.com/v1/jobs/$JOB
@@ -100,11 +100,13 @@ A **prediction** result:
 }
 ```
 
-- `rows`: one row per target, with confidence scores. Fields depend on the
-  model and inputs: `plddt`/`complex_plddt`, `ptm`/`iptm`, and (Boltz-2 affinity
-  runs) affinity fields. A rough read: interface `iptm` > 0.5, fold
+- `rows`: one row per target, with confidence scores. Fields depend on the model
+  and inputs: `plddt`/`complex_plddt`, `ptm`/`iptm`, and on Boltz-2 affinity runs
+  the affinity fields. A rough read: interface `iptm` > 0.5, fold
   `complex_plddt` > 0.7.
-- A **design** result carries the ranked `designs` instead of `rows`.
+- A **design** result carries `designs` instead of `rows`, ranked for BoltzGen
+  and unranked for RFdiffusion3. An **embed** result carries `sequences`; see
+  [Embeddings → Results](embeddings.md#results).
 - `artifacts[].url` and `archive_url` are paths under the base URL. Prefix them
   with `https://api.japanfold.com`.
 

@@ -25,8 +25,8 @@ SaProt for embeddings. No API key, no local GPU, nothing to install.
 
 ## The model: submit → poll → download
 
-Everything is an **async job**. You submit work, get back a job `id`, poll it
-until the `status` is terminal, then download the results.
+Everything is an async job. Submit work, get back a job `id`, poll until the
+`status` is terminal, then download the results.
 
 ```
 POST /v1/predictions   or   POST /v1/designs      →  { "id": "...", "status": "running", ... }
@@ -59,12 +59,10 @@ curl -s $BASE/v1/jobs/$JOB/results
 curl -s $BASE/v1/jobs/$JOB/archive -o myprotein.zip && unzip -oq myprotein.zip -d myprotein
 ```
 
-That's the whole workflow. Everything else (complexes, ligands, affinity,
-binder design, model and parameter choice) is a variation on these calls.
+That's the whole workflow. Complexes, ligands, affinity, binder design and
+parameter choice are all variations on these three calls.
 
 ## Where to go next
-
-Read the guides in order, or jump to what you need:
 
 <div class="grid cards" markdown>
 
@@ -110,12 +108,11 @@ Read the guides in order, or jump to what you need:
 
 </div>
 
-## A note on network egress
+## Network egress
 
-Some environments sandbox outbound HTTP. If so, allow the host
-**`api.japanfold.com`**. If a request ever returns HTTP `403` with Cloudflare
-error `1010`, that is edge bot-filtering of your HTTP client, not an API error.
-Retry with a browser-like `User-Agent` header.
+If your environment sandboxes outbound HTTP, allow the host
+`api.japanfold.com`. A `403` citing Cloudflare error `1010` is edge bot-filtering
+of your HTTP client, not an API error: retry with a browser-like `User-Agent`.
 
 <div class="jf-credits">
   <span>Powered by</span>

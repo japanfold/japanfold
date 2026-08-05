@@ -1,31 +1,29 @@
 # Embeddings
 
-`POST /v1/embeddings` turns one or more protein sequences into **protein
-language-model embeddings** (ESMC or SaProt) — numeric vectors you can feed to
-a classifier, clustering, similarity search or any downstream model. It returns
-a **job** to poll (see [Jobs](jobs.md)); there is no structure prediction and
-no MSA.
+`POST /v1/embeddings` turns protein sequences into protein language-model
+embeddings (ESMC or SaProt): numeric vectors you can feed to a classifier,
+clustering, similarity search or any downstream model. It returns a job to poll
+(see [Jobs](jobs.md)). No structure prediction, no MSA.
 
 ## Two kinds of vector
 
 For every sequence you get both:
 
-- **Per-residue** — one vector per amino acid, shape `[length, d_model]`. Use
-  it for residue-level tasks (contact/site prediction, per-position features).
-  The `<cls>`/`<eos>` boundary tokens are stripped, so row *i* is residue *i*.
-- **Pooled** — a single fixed-size vector per sequence, shape `[d_model]`,
-  obtained by combining the per-residue vectors (see `pool` below). Use it when
-  you want one vector per protein (similarity, clustering, a sequence-level
-  classifier).
+- **Per-residue**, shape `[length, d_model]`. For residue-level tasks (contact or
+  site prediction, per-position features). The `<cls>`/`<eos>` boundary tokens
+  are stripped, so row *i* is residue *i*.
+- **Pooled**, shape `[d_model]`, the per-residue vectors combined (see `pool`).
+  For one vector per protein: similarity, clustering, a sequence-level
+  classifier.
 
-`d_model` depends on the model (e.g. 960 for `esmc-300m`) and is reported in the
+`d_model` depends on the model (960 for `esmc-300m`) and is reported in the
 results.
 
 ## Input
 
-Provide **one** of these, exactly like [Predictions](predictions.md):
+Provide exactly one of these, as on [Predictions](predictions.md).
 
-### 1. `sequence`: a single chain (simplest)
+### 1. `sequence`: a single chain
 
 ```bash
 curl -s -X POST https://api.japanfold.com/v1/embeddings \
@@ -35,7 +33,7 @@ curl -s -X POST https://api.japanfold.com/v1/embeddings \
 
 ### 2. `sequences`: a list, to embed many in one job
 
-Each item is a bare string, or an object `{"sequence": "...", "id": "..."}`:
+Each item is a bare string or an object `{"sequence": "...", "id": "..."}`:
 
 ```bash
 curl -s -X POST https://api.japanfold.com/v1/embeddings \
@@ -59,18 +57,12 @@ curl -s -X POST https://api.japanfold.com/v1/embeddings \
 
 ## Models
 
-Set `model` (default `esmc-600m`). Larger is a stronger representation at more
-compute per sequence. SaProt is trained on sequence + structure tokens; this
-API runs it sequence-only (structure tokens masked), which the 1.3B variant is
-explicitly trained for. See [Models & limits](models-and-limits.md).
-
-| `id` | Name | Use it for |
-|---|---|---|
-| `esmc-300m` | ESMC 300M | Quickest embeddings, still a strong general-purpose representation. |
-| `esmc-600m` | ESMC 600M | The balanced default. |
-| `esmc-6b` | ESMC 6B | The strongest representation, at higher compute cost. |
-| `saprot-650m` | SaProt 650M | Structure-aware model (sequence-only here); strong alternative to ESMC. |
-| `saprot-1.3b` | SaProt 1.3B | Largest SaProt; trained to work sequence-only. |
+Set `model`, default `esmc-600m`: `esmc-300m`, `esmc-600m`, `esmc-6b`,
+`saprot-650m`, `saprot-1.3b`. Larger is a stronger representation at more compute
+per sequence. SaProt is trained on sequence + structure tokens and runs
+sequence-only here (structure tokens masked), which the 1.3B variant is
+explicitly trained for. See
+[Models & limits](models-and-limits.md#embedding-models).
 
 ## Parameters
 
@@ -90,16 +82,15 @@ curl -s -X POST https://api.japanfold.com/v1/embeddings \
 
 ## Results
 
-Poll `GET /v1/jobs/{id}` and, once `results_ready` is true, read
-`GET /v1/jobs/{id}/results`. For an embed job the body carries `kind: "embed"`,
-the `model`, `pool`, `format`, `d_model`, a `sequences` list
-(`{id, length, file}` per input), and an `artifacts` list of download URLs.
+Once `results_ready` is true, `GET /v1/jobs/{id}/results` carries
+`kind: "embed"`, the `model`, `pool`, `format`, `d_model`, a `sequences` list
+(`{id, length, file}` per input) and an `artifacts` list of download URLs.
 
 - **`npz`** (default): one `<id>.npz` per sequence with arrays `per_residue`
-  `[length, d_model]`, `pooled` `[d_model]`, and `sequence`.
-- **`parquet`**: a single `embeddings.parquet` — the pooled matrix, one row per
-  sequence (per-residue vectors are ragged, so they are not in the table; use
-  `npz` for those).
+  `[length, d_model]`, `pooled` `[d_model]` and `sequence`.
+- **`parquet`**: a single `embeddings.parquet` holding the pooled matrix, one row
+  per sequence. Per-residue vectors are ragged, so they are not in the table; use
+  `npz` for those.
 
 Download individual files from their artifact `url`, or the whole set from
 `GET /v1/jobs/{id}/archive`.
@@ -123,21 +114,16 @@ data = np.load(io.BytesIO(httpx.get(url).content))
 print(data["per_residue"].shape, data["pooled"].shape)  # (L, d_model) (d_model,)
 ```
 
-## From your agent (the skill)
+With the [JapanFold skill](skill.md) installed, ask instead: *"Embed these
+sequences with ESMC-600M and save the pooled vectors."*
 
-With the [JapanFold skill](skill.md) installed, just ask:
-
-> *"Embed these sequences with ESMC-600M and save the pooled vectors."*
-
-## Waiting inline, retrying safely
-
-Embed jobs accept the same `Prefer: wait[=seconds]` header (block until done, up
-to 60s) and `Idempotency-Key` (a retried submit returns the original job) as
-predictions — see [Predictions](predictions.md#waiting-inline-the-prefer-wait-header).
+Embed jobs accept the same `Prefer: wait[=seconds]` and `Idempotency-Key`
+headers as predictions
+(see [Predictions](predictions.md#waiting-inline-the-prefer-wait-header)).
 
 ## Limits
 
-Free public demo: at most **50 sequences per submission** and **2000 residues
-per sequence** (embeddings run the language model only, so this is higher than
-the folding size cap). Over a cap → `400`; at capacity → `429`. See
-[Models & limits](models-and-limits.md) and [Errors](errors.md).
+At most 50 sequences per submission and 2000 residues per sequence, higher than
+the folding cap because embeddings run the language model only. Over a cap you
+get `400`, at capacity `429`. See
+[Models & limits](models-and-limits.md#limits) and [Errors](errors.md).

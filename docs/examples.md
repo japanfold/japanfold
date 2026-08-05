@@ -1,18 +1,11 @@
 # Examples
 
-End-to-end, copy-pasteable examples in **curl** and **Python**, for the common
-tasks: a plain fold, a co-fold with affinity, and binder design (BoltzGen and
-RFdiffusion3). All use the async submit → poll → download flow.
-
-```
-BASE = https://api.japanfold.com
-```
-
----
+One worked example per capability, in curl and Python. All of them are the same
+async flow: submit, poll, download. Parameter detail lives on the endpoint pages
+([Predictions](predictions.md), [Designs](designs.md),
+[Embeddings](embeddings.md)).
 
 ## Fold a protein
-
-### curl
 
 ```bash
 BASE=https://api.japanfold.com
@@ -30,13 +23,13 @@ curl -s $BASE/v1/jobs/$JOB/results
 curl -s $BASE/v1/jobs/$JOB/archive -o myprotein.zip && unzip -oq myprotein.zip -d myprotein
 ```
 
-### Python: stdlib only (no dependencies)
+The same thing in Python, stdlib only:
 
 ```python
 import json, time, urllib.request
 
 BASE = "https://api.japanfold.com"
-# The edge blocks urllib's default User-Agent as a bot — send a browser-like one.
+# The edge blocks urllib's default User-Agent as a bot, so send a browser-like one.
 HEADERS = {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"}
 
 def api(method, path, body=None):
@@ -62,64 +55,16 @@ results = api("GET", f"/v1/jobs/{job['id']}/results")
 for row in results["rows"]:
     print(row["id"], "plddt=", row.get("plddt"), "ptm=", row.get("ptm"))
 
-# download the zip bundle (urlretrieve doesn't take headers, so open it directly)
+# urlretrieve takes no headers, so open the archive directly
 req = urllib.request.Request(BASE + results["archive_url"], headers=HEADERS)
 with urllib.request.urlopen(req) as r, open("myprotein.zip", "wb") as f:
     f.write(r.read())
 ```
 
-### Python: httpx
-
-```python
-import time, httpx
-
-BASE = "https://api.japanfold.com"
-
-with httpx.Client(base_url=BASE, timeout=120) as c:
-    job = c.post("/v1/predictions", json={
-        "model": "boltz2", "name": "myprotein",
-        "sequence": "MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQ"}).json()
-
-    while job["status"] not in ("succeeded", "failed", "canceled"):
-        time.sleep(5)
-        job = c.get(f"/v1/jobs/{job['id']}").json()
-
-    results = c.get(f"/v1/jobs/{job['id']}/results").json()
-    print(results["rows"])
-    with open("myprotein.zip", "wb") as f:
-        f.write(c.get(results["archive_url"]).content)
-```
-
----
-
 ## Co-fold a protein + ligand, with affinity
 
-Only **Boltz-2** does affinity. Provide the complex as a Boltz YAML `input`
-string with a `ligand` chain and a `properties: affinity` block.
-
-### curl
-
-```bash
-BASE=https://api.japanfold.com
-
-read -r -d '' PAYLOAD <<'JSON'
-{
-  "model": "boltz2",
-  "name": "prot-ligand",
-  "input": "sequences:\n  - protein: {id: A, sequence: MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQ}\n  - ligand: {id: L, smiles: \"CC(=O)Oc1ccccc1C(=O)O\"}\nproperties:\n  - affinity: {binder: L}\n",
-  "params": {"use_msa_server": true}
-}
-JSON
-
-JOB=$(curl -s -X POST $BASE/v1/predictions -H 'Content-Type: application/json' \
-  -d "$PAYLOAD" | python3 -c 'import sys,json; print(json.load(sys.stdin)["id"])')
-
-curl -s -H 'Prefer: wait=120' $BASE/v1/jobs/$JOB          # affinity runs take longer
-curl -s $BASE/v1/jobs/$JOB/results
-curl -s $BASE/v1/jobs/$JOB/archive -o prot-ligand.zip
-```
-
-### Python: httpx
+Only Boltz-2 does affinity. Pass the complex as a Boltz YAML `input` with a
+`ligand` chain and a `properties: affinity` block naming the binder.
 
 ```python
 import time, httpx
@@ -143,41 +88,13 @@ with httpx.Client(base_url=BASE, timeout=180) as c:
     print(c.get(f"/v1/jobs/{job['id']}/results").json()["rows"])
 ```
 
-The result `rows` include affinity fields alongside the structure/confidence
+The result `rows` carry affinity fields alongside the structure and confidence
 scores.
 
----
+## Design binders (BoltzGen)
 
-## Binder design
-
-De-novo binders with BoltzGen via `POST /v1/designs`. Poll and download like a
-prediction; the results carry ranked `designs`.
-
-### curl
-
-```bash
-BASE=https://api.japanfold.com
-
-read -r -d '' PAYLOAD <<'JSON'
-{
-  "protocol": "nanobody-anything",
-  "name": "my-nanobodies",
-  "spec": "sequences:\n  - protein: {id: A, sequence: MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQ}\n",
-  "params": {"num_designs": 10, "budget": 10, "fast": true}
-}
-JSON
-
-JOB=$(curl -s -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
-  -d "$PAYLOAD" | python3 -c 'import sys,json; print(json.load(sys.stdin)["id"])')
-
-until curl -s $BASE/v1/jobs/$JOB \
-  | grep -qE '"status":"(succeeded|failed|canceled)"'; do sleep 10; done
-
-curl -s $BASE/v1/jobs/$JOB/results
-curl -s $BASE/v1/jobs/$JOB/archive -o designs.zip && unzip -oq designs.zip -d designs
-```
-
-### Python: httpx
+`POST /v1/designs` with a protocol and a YAML `spec`. Results carry ranked
+`designs`.
 
 ```python
 import time, httpx
@@ -198,13 +115,10 @@ with httpx.Client(base_url=BASE, timeout=300) as c:
         f.write(c.get(results["archive_url"]).content)
 ```
 
-## Binder design against a structure (RFdiffusion3)
+## Design against a structure (RFdiffusion3)
 
-Same flow, but the input is a pasted **structure** plus a **contig** saying what
-stays fixed vs. what gets designed. Results are unranked mmCIFs (see
-[Designs](designs.md)).
-
-### Python: httpx
+Same endpoint, but the input is a pasted `structure` plus a `contig` saying what
+stays fixed and what gets designed. Results are unranked mmCIFs.
 
 ```python
 import time, httpx
@@ -226,3 +140,7 @@ with httpx.Client(base_url=BASE, timeout=300) as c:
     with open("designs.zip", "wb") as f:
         f.write(c.get(results["archive_url"]).content)
 ```
+
+## Embed sequences
+
+See [Embeddings](embeddings.md#end-to-end-python) for the ESMC/SaProt example.
