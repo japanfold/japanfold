@@ -13,7 +13,7 @@ SaProt for embeddings. No API key, no local GPU, nothing to install.
 
 <div class="jf-pills">
   <div class="jf-endpoint"><span class="jf-key">Base URL</span> https://api.japanfold.com</div>
-  <div class="jf-endpoint"><span class="jf-key">Contract</span> <a href="https://api.japanfold.com/v1/openapi.json">/v1/openapi.json</a> <span class="jf-key">OpenAPI 3.1, the source of truth</span></div>
+  <div class="jf-endpoint"><span class="jf-key">Contract</span> <a href="https://api.japanfold.com/v1/openapi.json">/v1/openapi.json</a> <span class="jf-key">OpenAPI 3.1</span></div>
 </div>
 
 <div class="jf-cta" markdown>

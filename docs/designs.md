@@ -1,8 +1,8 @@
 # Designs
 
 `POST /v1/designs` designs de-novo proteins against a target. Two engines share
-the endpoint: [BoltzGen](https://github.com/jwohlwend/boltz) takes a sequence or
-ligand target and returns designs **ranked** by predicted confidence;
+the endpoint: [BoltzGen](https://github.com/HannesStark/boltzgen) takes a
+sequence or ligand target and returns designs **ranked** by predicted confidence;
 RFdiffusion3 takes a pasted **structure** plus a contig and returns them
 **unranked**. Both return a job to poll, exactly like a
 [prediction](predictions.md).
@@ -71,9 +71,9 @@ curl -s -X POST https://api.japanfold.com/v1/designs \
 | `rfd3-scaffold` | Scaffold around a fixed functional motif: list the motif residues, design between them. |
 | `rfd3-na-binder` | Binder against a fixed DNA or RNA structure. |
 
-RFdiffusion3 designs are unranked: there is no refold-and-filter step, so you get
-one mmCIF per design with no confidence scores. To check one, fold its sequence
-back onto the target with a [prediction](predictions.md) and read the interface
+RFdiffusion3 returns one mmCIF per design, unranked: each is an independent draw
+with its own all-atom backbone and sequence. To score one, fold its sequence back
+onto the target with a [prediction](predictions.md) and read the interface
 confidence (`iptm`).
 
 ## Reading designs

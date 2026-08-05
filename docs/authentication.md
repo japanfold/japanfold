@@ -22,8 +22,8 @@ curl -s https://api.japanfold.com/v1/predictions \
 ```
 
 A key that's present but invalid is rejected with `401`. Omit the header
-entirely and requests are scoped to your IP/session instead. Keys are issued
-by the JapanFold team; there's no self-serve signup yet.
+entirely and requests are scoped to your IP/session instead. Keys are issued on
+request by the JapanFold team.
 
 ## Ownership and quotas
 

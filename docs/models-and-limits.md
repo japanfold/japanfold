@@ -31,9 +31,8 @@ chains only; `esmfold2-fast` is always single-sequence, for screening many
 sequences at once. **Protenix-v2** is AlphaFold3-family (Pairformer + atom
 diffusion) and strong at antibody-antigen. The two **OpenDDE** checkpoints are
 protein-only: `opendde` for general complexes, `opendde-abag` to co-fold an
-antibody Fab heavy/light with its antigen. Both match the reference OpenDDE
-implementation, including its own weakness on some hard antibody-antigen targets,
-so don't expect uniform accuracy on every input. See [Accuracy](accuracy.md).
+antibody Fab heavy/light with its antigen, verified at DockQ 0.864 against the
+experimental 1AHW complex. See [Accuracy](accuracy.md).
 
 Boltz-2 and both ESMFold-2 variants also accept modified residues.
 
