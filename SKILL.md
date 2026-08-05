@@ -119,6 +119,9 @@ Protocols: `protein-anything`, `peptide-anything`, `nanobody-anything`,
 `antibody-anything`, `protein-small_molecule`, `protein-redesign`. Poll the same
 way; `/v1/jobs/{id}/results` returns the ranked designs.
 
+The protocol implies the design model; an explicit `model` (`boltzgen`/`rfd3`,
+the CLI's `--model` vocabulary) is accepted but must match it.
+
 ## Design against a structure (RFdiffusion3)
 
 Same endpoint, but the input is a pasted **structure** plus a **contig** (what

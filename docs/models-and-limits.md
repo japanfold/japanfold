@@ -65,7 +65,7 @@ Sent as `params` on `POST /v1/predictions`. Out-of-range values are clamped.
 
 ## Design protocols and parameters
 
-Two engines share `POST /v1/designs`. **BoltzGen** protocols take a YAML `spec`
+Two design models share `POST /v1/designs`. **BoltzGen** protocols take a YAML `spec`
 and return ranked designs: `protein-anything`, `peptide-anything`,
 `nanobody-anything`, `antibody-anything`, `protein-small_molecule`,
 `protein-redesign`. **RFdiffusion3** protocols take a pasted `structure` plus a

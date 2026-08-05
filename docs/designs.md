@@ -7,6 +7,10 @@ RFdiffusion3 takes a pasted **structure** plus a contig and returns them
 **unranked**. Both return a job to poll, exactly like a
 [prediction](predictions.md).
 
+The protocol implies the model. You may pass `model` explicitly
+(`boltzgen` or `rfd3` — the same vocabulary as the CLI's `--model`), but it
+must match the protocol's model; a mismatch is a 400.
+
 ## BoltzGen: binders against a sequence or ligand
 
 ```bash
