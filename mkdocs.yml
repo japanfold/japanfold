@@ -1,8 +1,8 @@
 site_name: JapanFold API
 site_description: JapanFold API documentation — free, public, Tenstorrent-accelerated protein structure prediction and binder design.
 site_url: https://docs.japanfold.com/
-repo_url: https://github.com/moritztng/japanfold
-repo_name: moritztng/japanfold
+repo_url: https://github.com/japanfold/japanfold
+repo_name: japanfold/japanfold
 edit_uri: edit/master/docs/
 copyright: JapanFold. Sovereign compute in Japan, powered by ai&amp; on Tenstorrent.
 
@@ -88,5 +88,5 @@ extra:
       link: https://japanfold.com
       name: japanfold.com
     - icon: fontawesome/brands/github
-      link: https://github.com/moritztng/japanfold
+      link: https://github.com/japanfold/japanfold
       name: GitHub
