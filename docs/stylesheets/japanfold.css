@@ -1,0 +1,526 @@
+/* JapanFold docs — the same visual language as the app (tt_bio/platform/frontend
+   theme.css): calm Japanese minimalism. Light "paper" surfaces, generous
+   whitespace, hairline borders, one confident near-black accent. DM Sans for
+   prose, Fragment Mono for anything you would paste into a terminal.
+
+   Material's own look (chunky coloured header, grey code slabs, heavy
+   admonition ribbons) is deliberately flattened here so the docs read as the
+   same product as japanfold.com, not as a generated site. */
+
+/* The exact weights the app requests — Material's built-in font link only asks
+   for 300/400/700, and 600 headings would otherwise be synthesised. */
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fragment+Mono&display=swap");
+
+/* ---------- tokens ---------- */
+
+:root {
+  --jf-radius: 8px;
+  --jf-radius-sm: 5px;
+  --md-text-font: "DM Sans";
+  --md-code-font: "Fragment Mono";
+}
+
+[data-md-color-scheme="default"] {
+  --jf-bg: #f6f6f7;         /* light, neutral paper */
+  --jf-surface: #ffffff;
+  --jf-surface-2: #f0f0f2;
+  --jf-border: #e6e6e9;     /* hairline */
+  --jf-border-strong: #d6d6da;
+  --jf-ink: #1c1d21;
+  --jf-ink-soft: #4a4d55;
+  --jf-muted: #7a7d85;
+  --jf-muted-2: #abadb4;
+  --jf-accent: #1a1c20;     /* near-black — the brand accent */
+  --jf-accent-soft: rgba(26, 28, 32, 0.06);
+  --jf-run: #3576e0;        /* the app's "in progress" blue, used for hints */
+  --jf-ok: #1aa35b;
+  --jf-warn: #d98c0a;
+  --jf-err: #e2483d;
+  --jf-code-str: #2f7d55;
+  --jf-shadow: 0 1px 2px rgba(40, 50, 90, 0.04), 0 10px 28px rgba(40, 50, 90, 0.07);
+
+  --md-default-bg-color: var(--jf-bg);
+  --md-default-fg-color: var(--jf-ink);
+  --md-default-fg-color--light: var(--jf-ink-soft);
+  --md-default-fg-color--lighter: var(--jf-muted);
+  --md-default-fg-color--lightest: var(--jf-border);
+  --md-primary-fg-color: var(--jf-accent);
+  --md-primary-bg-color: #ffffff;
+  --md-accent-fg-color: var(--jf-accent);
+  --md-typeset-color: var(--jf-ink);
+  --md-typeset-a-color: var(--jf-accent);
+  --md-code-bg-color: var(--jf-surface);
+  --md-code-fg-color: var(--jf-ink);
+  --md-footer-bg-color: var(--jf-surface);
+  --md-footer-bg-color--dark: var(--jf-surface);
+  --md-footer-fg-color: var(--jf-ink);
+}
+
+[data-md-color-scheme="slate"] {
+  --jf-bg: #15161a;
+  --jf-surface: #1b1c21;
+  --jf-surface-2: #23252b;
+  --jf-border: #2b2d34;
+  --jf-border-strong: #383b43;
+  --jf-ink: #e9e9ec;
+  --jf-ink-soft: #c2c4cb;
+  --jf-muted: #9497a0;
+  --jf-muted-2: #6d707a;
+  --jf-accent: #f3f3f5;     /* the accent inverts: paper on ink */
+  --jf-accent-soft: rgba(255, 255, 255, 0.07);
+  --jf-run: #7aa8f2;
+  --jf-ok: #4bc07f;
+  --jf-warn: #e0a83c;
+  --jf-err: #ef7168;
+  --jf-code-str: #86c9a3;
+  --jf-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 28px rgba(0, 0, 0, 0.35);
+
+  --md-hue: 232;
+  --md-default-bg-color: var(--jf-bg);
+  --md-default-fg-color: var(--jf-ink);
+  --md-default-fg-color--light: var(--jf-ink-soft);
+  --md-default-fg-color--lighter: var(--jf-muted);
+  --md-default-fg-color--lightest: var(--jf-border);
+  --md-primary-fg-color: var(--jf-surface);
+  --md-primary-bg-color: var(--jf-ink);
+  --md-accent-fg-color: var(--jf-accent);
+  --md-typeset-color: var(--jf-ink);
+  --md-typeset-a-color: var(--jf-ink);
+  --md-code-bg-color: #14151a;
+  --md-code-fg-color: var(--jf-ink);
+  --md-footer-bg-color: var(--jf-surface);
+  --md-footer-bg-color--dark: var(--jf-surface);
+  --md-footer-fg-color: var(--jf-ink);
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: 0;
+}
+
+::selection { background: var(--jf-accent-soft); }
+
+/* ---------- header: white, hairline, no shadow ---------- */
+
+.md-header {
+  background: var(--jf-surface);
+  color: var(--jf-ink);
+  box-shadow: none;
+  border-bottom: 1px solid var(--jf-border);
+}
+.md-header--shadow { box-shadow: none; }
+.md-header__title {
+  font-weight: 600;
+  font-size: 1.05rem;
+  letter-spacing: -0.015em;
+}
+.md-header__title .md-header__topic:first-child { font-weight: 600; }
+.md-header__button.md-logo :is(img, svg) { height: 1.55rem; width: auto; }
+/* The mark's residues are near-black, so it needs inverting on an ink header. */
+[data-md-color-scheme="slate"] .md-header__button.md-logo :is(img, svg) {
+  filter: invert(1) brightness(1.6);
+}
+.md-header__button:hover { opacity: 1; color: var(--jf-accent); }
+
+/* Material fetches star/fork counts for the repo link. A young repo advertising
+   0 stars and 0 forks is worse than saying nothing, so the counts stay off. */
+.md-source__facts { display: none; }
+
+/* Search: a quiet inset field instead of Material's translucent bar. */
+.md-search__form {
+  background: var(--jf-surface-2);
+  border: 1px solid var(--jf-border);
+  border-radius: 999px;
+  box-shadow: none;
+  height: 2.1rem;
+}
+.md-search__form:hover { background: var(--jf-surface-2); border-color: var(--jf-border-strong); }
+.md-search__input { color: var(--jf-ink); }
+.md-search__input::placeholder { color: var(--jf-muted); }
+.md-search__icon { color: var(--jf-muted); }
+[data-md-toggle="search"]:checked ~ .md-header .md-search__form {
+  background: var(--jf-surface);
+  border-color: var(--jf-border-strong);
+}
+.md-search__output { border-radius: var(--jf-radius); box-shadow: var(--jf-shadow); }
+.md-search-result__meta {
+  background: var(--jf-surface-2);
+  color: var(--jf-muted);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ---------- navigation ---------- */
+
+.md-nav { font-size: 0.72rem; }
+.md-nav__title {
+  color: var(--jf-muted);
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+/* Section labels ("Start here", "Endpoints", "Reference") read as small caps. */
+.md-nav--primary .md-nav__item--section > .md-nav__link {
+  color: var(--jf-muted);
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 0.2rem;
+}
+.md-nav__link {
+  color: var(--jf-ink-soft);
+  border-radius: var(--jf-radius-sm);
+  transition: color 0.12s ease, background 0.12s ease;
+}
+.md-nav__link:is(:hover, :focus) { color: var(--jf-ink); }
+.md-nav__item .md-nav__link--active,
+.md-nav__item .md-nav__link--active code {
+  color: var(--jf-ink);
+  font-weight: 600;
+}
+/* Pages in a section hang off one continuous hairline rail; the active page
+   overdraws its own segment in accent so the marker lines up exactly. */
+.md-nav--primary .md-nav__item--section > .md-nav__list {
+  border-left: 1px solid var(--jf-border);
+}
+.md-nav--primary .md-nav__item--section > .md-nav__list > .md-nav__item > .md-nav__link {
+  padding-left: 0.7rem;
+}
+.md-nav--primary .md-nav__item--section > .md-nav__list > .md-nav__item > .md-nav__link--active {
+  box-shadow: -1px 0 0 var(--jf-accent);
+}
+/* The header already carries the wordmark — the sidebar repeat is noise. */
+.md-sidebar--primary .md-nav--primary > .md-nav__title { display: none; }
+@media screen and (max-width: 76.1875em) {
+  .md-sidebar--primary .md-nav--primary > .md-nav__title { display: block; }
+}
+
+/* Table of contents */
+.md-nav--secondary .md-nav__title { padding-bottom: 0.4rem; }
+.md-sidebar--secondary .md-nav__link--active { color: var(--jf-ink); }
+
+/* ---------- typography ---------- */
+
+.md-typeset {
+  font-size: 0.79rem;
+  line-height: 1.68;
+  color: var(--jf-ink);
+}
+.md-typeset :is(h1, h2, h3, h4) {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--jf-ink);
+}
+.md-typeset h1 {
+  font-size: 1.9rem;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  margin-bottom: 0.6rem;
+}
+/* A hairline above every h2 gives long API pages a visible rhythm. */
+.md-typeset h2 {
+  font-size: 1.24rem;
+  line-height: 1.3;
+  margin-top: 2.4rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--jf-border);
+}
+.md-typeset h3 { font-size: 1rem; margin-top: 1.7rem; }
+.md-typeset h4 { font-size: 0.85rem; color: var(--jf-ink-soft); }
+.md-typeset p { max-width: 46rem; }
+.md-typeset hr { border-bottom-color: var(--jf-border); }
+
+/* Links: near-black with a hairline underline that firms up on hover — an
+   editorial affordance that does not need a brand colour to shout. */
+.md-typeset :is(p, li, td, dd) > a:not(.md-button):not(.headerlink) {
+  color: var(--jf-ink);
+  border-bottom: 1px solid rgba(122, 125, 133, 0.5);
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+.md-typeset :is(p, li, td, dd) > a:not(.md-button):not(.headerlink):hover {
+  border-bottom-color: var(--jf-accent);
+  background: var(--jf-accent-soft);
+}
+.md-typeset .headerlink { color: var(--jf-muted-2); }
+.md-typeset :target { --md-scroll-margin: 4rem; }
+
+/* ---------- code ---------- */
+
+.md-typeset code {
+  background: var(--jf-surface);
+  border: 1px solid var(--jf-border);
+  border-radius: 4px;
+  padding: 0.05em 0.36em;
+  font-size: 0.86em;
+  color: var(--jf-ink);
+}
+.md-typeset :is(h1, h2, h3, h4) code {
+  font-size: 0.85em;
+  background: transparent;
+  border-color: transparent;
+  padding: 0;
+}
+.md-typeset :is(pre, .highlight, .highlighttable) { box-shadow: none; }
+.md-typeset .highlight,
+.md-typeset .highlighttable {
+  border: 1px solid var(--jf-border);
+  border-radius: var(--jf-radius);
+  overflow: hidden;
+  background: var(--md-code-bg-color);
+}
+.md-typeset .highlight > pre,
+.md-typeset .highlighttable pre { margin: 0; }
+.md-typeset pre > code {
+  border: none;
+  padding: 0.85rem 1rem;
+  font-size: 0.7rem;
+  line-height: 1.62;
+  background: transparent;
+}
+.md-typeset .highlight [data-linenos]::before { color: var(--jf-muted-2); }
+.md-clipboard { color: var(--jf-muted-2); }
+.md-clipboard:hover { color: var(--jf-ink); }
+
+/* A calm syntax palette: ink for code, muted for comments, one blue for
+   identifiers and one green for strings. No rainbow. */
+.md-typeset .highlight :is(.k, .kd, .kn, .kp, .kr, .kt, .ow, .nb) { color: var(--jf-ink); font-weight: 600; }
+.md-typeset .highlight :is(.c, .c1, .cm, .ch, .cs, .cp) { color: var(--jf-muted); font-style: italic; }
+.md-typeset .highlight :is(.s, .s1, .s2, .sb, .sc, .sd, .se, .sh, .si, .sx, .sr, .ss) { color: var(--jf-code-str); }
+.md-typeset .highlight :is(.nf, .nx, .na, .nt, .nv, .nd) { color: var(--jf-run); }
+.md-typeset .highlight :is(.m, .mi, .mf, .mh, .mo, .il) { color: var(--jf-warn); }
+.md-typeset .highlight :is(.o, .p, .si) { color: var(--jf-ink-soft); }
+.md-typeset .highlight :is(.err, .gr) { color: var(--jf-err); background: transparent; }
+
+/* ---------- tables ---------- */
+
+.md-typeset table:not([class]) {
+  background: var(--jf-surface);
+  border: 1px solid var(--jf-border);
+  border-radius: var(--jf-radius);
+  box-shadow: none;
+  font-size: 0.72rem;
+}
+.md-typeset table:not([class]) th {
+  background: var(--jf-surface);
+  color: var(--jf-muted);
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--jf-border);
+  white-space: nowrap;
+}
+.md-typeset table:not([class]) :is(td, th) { padding: 0.6rem 0.8rem; }
+.md-typeset table:not([class]) td { border-top: 1px solid var(--jf-border); }
+.md-typeset table:not([class]) tbody tr:hover { background: var(--jf-surface-2); }
+.md-typeset table:not([class]) tbody tr:first-child td { border-top: none; }
+
+/* ---------- admonitions, details, quotes ---------- */
+
+.md-typeset :is(.admonition, details) {
+  background: var(--jf-surface);
+  border: 1px solid var(--jf-border);
+  border-left: 2px solid var(--jf-border-strong);
+  border-radius: var(--jf-radius);
+  box-shadow: none;
+  font-size: 0.75rem;
+}
+.md-typeset :is(.admonition-title, summary) {
+  background: transparent;
+  color: var(--jf-ink);
+  font-weight: 600;
+  padding: 0.6rem 0.8rem 0.6rem 2.2rem;
+}
+.md-typeset :is(.admonition-title, summary)::before { top: 0.7rem; left: 0.75rem; }
+.md-typeset :is(.admonition, details) > :not(.admonition-title):not(summary) { padding: 0 0.8rem; }
+.md-typeset .note { border-left-color: var(--jf-run); }
+.md-typeset :is(.tip, .success) { border-left-color: var(--jf-ok); }
+.md-typeset :is(.warning, .caution) { border-left-color: var(--jf-warn); }
+.md-typeset :is(.danger, .failure, .bug) { border-left-color: var(--jf-err); }
+.md-typeset blockquote {
+  color: var(--jf-ink-soft);
+  border-left: 2px solid var(--jf-border-strong);
+}
+
+/* Tabbed code samples read as a segmented control, not a browser tab strip. */
+.md-typeset .tabbed-labels > label {
+  color: var(--jf-muted);
+  font-size: 0.68rem;
+  font-weight: 500;
+}
+.md-typeset .tabbed-labels > label:hover { color: var(--jf-ink); }
+.md-typeset .tabbed-set > input:checked + label { color: var(--jf-ink); border-color: var(--jf-accent); }
+
+/* ---------- buttons ---------- */
+
+.md-typeset .md-button {
+  font-size: 0.74rem;
+  font-weight: 500;
+  padding: 0.42rem 0.9rem;
+  border: 1px solid var(--jf-border-strong);
+  border-radius: var(--jf-radius-sm);
+  color: var(--jf-ink);
+  background: var(--jf-surface);
+  transition: all 0.12s ease;
+}
+.md-typeset .md-button:hover { border-color: var(--jf-muted-2); background: var(--jf-surface); color: var(--jf-ink); }
+.md-typeset .md-button--primary {
+  background: var(--jf-accent);
+  border-color: var(--jf-accent);
+  color: var(--md-primary-bg-color);
+}
+.md-typeset .md-button--primary:hover {
+  background: #000;
+  border-color: #000;
+  color: #fff;
+}
+/* In dark mode the accent inverts to paper, so the label must go back to ink —
+   inheriting the light foreground would print white on white. */
+[data-md-color-scheme="slate"] .md-typeset .md-button--primary {
+  background: var(--jf-accent);
+  border-color: var(--jf-accent);
+  color: #15161a;
+}
+[data-md-color-scheme="slate"] .md-typeset .md-button--primary:hover {
+  background: #fff;
+  border-color: #fff;
+  color: #15161a;
+}
+
+/* ---------- landing hero + cards (index.md) ---------- */
+
+.jf-hero { margin: 0 0 2.2rem; }
+.jf-hero .jf-eyebrow {
+  color: var(--jf-muted);
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  margin: 0 0 0.7rem;
+}
+.md-typeset .jf-hero h1 {
+  font-size: clamp(1.9rem, 1.3rem + 2.4vw, 2.7rem);
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  margin: 0 0 0.7rem;
+}
+.md-typeset .jf-hero .jf-lede {
+  font-size: 0.9rem;
+  line-height: 1.62;
+  color: var(--jf-ink-soft);
+  max-width: 40rem;
+  margin: 0 0 1.2rem;
+}
+.jf-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.3rem;
+}
+.jf-endpoint {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  font-family: var(--md-code-font), monospace;
+  font-size: 0.7rem;
+  background: var(--jf-surface);
+  border: 1px solid var(--jf-border);
+  border-radius: var(--jf-radius-sm);
+  padding: 0.5rem 0.8rem;
+  color: var(--jf-ink);
+}
+.jf-endpoint .jf-key { color: var(--jf-muted); }
+.md-typeset .jf-endpoint a {
+  color: var(--jf-ink);
+  border-bottom: 1px solid var(--jf-muted-2);
+}
+.md-typeset .jf-endpoint a:hover { border-bottom-color: var(--jf-accent); }
+.jf-cta { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
+
+/* "Powered by" strip — same optical balance as the app topbar: the ai& mark is
+   set larger than the Tenstorrent wordmark, which is far wider per unit height. */
+.jf-credits {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  color: var(--jf-muted);
+  font-size: 0.68rem;
+  margin: 2.6rem 0 0;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--jf-border);
+}
+.jf-credits img { height: 0.85rem; width: auto; display: block; }
+.jf-credits img.jf-aiand { height: 1.05rem; position: relative; top: -1px; }
+[data-md-color-scheme="slate"] .jf-credits img { filter: invert(1) brightness(1.7); }
+
+/* Card grid — the app's selectable-card treatment: hairline box, accent border
+   on hover, a single line of muted supporting copy. */
+.md-typeset .grid.cards > :is(ul, ol) > li,
+.md-typeset .grid > .card {
+  background: var(--jf-surface);
+  border: 1px solid var(--jf-border);
+  border-radius: var(--jf-radius);
+  padding: 0.9rem 1rem;
+  margin: 0;
+  box-shadow: none;
+  transition: border-color 0.12s ease, transform 0.12s ease, box-shadow 0.12s ease;
+}
+.md-typeset .grid.cards > :is(ul, ol) > li:hover {
+  border-color: var(--jf-border-strong);
+  transform: translateY(-1px);
+  box-shadow: var(--jf-shadow);
+}
+/* The title line carries the divider itself: a markdown `---` inside a card
+   renders inset on the left, which reads as a misalignment. */
+.md-typeset .grid.cards > :is(ul, ol) > li > p:first-child {
+  font-size: 0.82rem;
+  border-bottom: 1px solid var(--jf-border);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.55rem;
+}
+.md-typeset .grid.cards > :is(ul, ol) > li > p:not(:first-child) {
+  color: var(--jf-ink-soft);
+  font-size: 0.73rem;
+  line-height: 1.55;
+}
+.md-typeset .grid.cards > :is(ul, ol) > li :is(.twemoji, .lg) svg { fill: var(--jf-muted); }
+.md-typeset .grid.cards > :is(ul, ol) > li hr {
+  margin: 0.6rem 0;
+  border-bottom-color: var(--jf-border);
+}
+.md-typeset .grid.cards > :is(ul, ol) > li > p > a:not(.md-button) { border-bottom: none; }
+
+/* ---------- footer ---------- */
+
+.md-footer {
+  background: var(--jf-surface);
+  border-top: 1px solid var(--jf-border);
+}
+.md-footer-meta { background: transparent; }
+.md-footer-meta__inner { padding-top: 0.8rem; padding-bottom: 0.8rem; }
+.md-copyright,
+.md-copyright__highlight { color: var(--jf-muted); font-size: 0.62rem; }
+.md-social__link { color: var(--jf-muted); }
+.md-social__link:hover { color: var(--jf-ink); }
+.md-footer__link { color: var(--jf-ink); opacity: 1; }
+.md-footer__direction { color: var(--jf-muted); }
+.md-footer__title { background: transparent; }
+
+/* ---------- misc chrome ---------- */
+
+.md-top {
+  background: var(--jf-surface);
+  border: 1px solid var(--jf-border);
+  color: var(--jf-ink);
+  box-shadow: none;
+}
+.md-top:hover { background: var(--jf-surface); border-color: var(--jf-border-strong); }
+.md-content__button { color: var(--jf-muted-2); }
+.md-content__button:hover { color: var(--jf-ink); }
+.md-content__inner { padding-top: 1.4rem; }
+.md-content__inner::before { height: 0; }

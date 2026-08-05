@@ -1,15 +1,27 @@
+<div class="jf-hero" markdown>
+<p class="jf-eyebrow">API documentation</p>
+
 # JapanFold API
 
+<p class="jf-lede">
 Fold proteins, co-fold complexes with ligands (and get binding affinity),
-design de-novo binders, and compute protein embeddings, over a **free, public,
-keyless HTTP API**. Boltz-2, ESMFold-2, Protenix-v2 and OpenDDE for structure
-prediction, BoltzGen and RFdiffusion3 for binder design, ESMC and SaProt for
-embeddings. No API key, no local GPU, nothing to install.
+design de-novo binders, and compute protein embeddings, over a <strong>free,
+public, keyless HTTP API</strong>. Boltz-2, ESMFold-2, Protenix-v2 and OpenDDE
+for structure prediction, BoltzGen and RFdiffusion3 for binder design, ESMC and
+SaProt for embeddings. No API key, no local GPU, nothing to install.
+</p>
 
-```
-Base URL   https://api.japanfold.com
-Contract   https://api.japanfold.com/v1/openapi.json   (OpenAPI 3.1, the source of truth)
-```
+<div class="jf-pills">
+  <div class="jf-endpoint"><span class="jf-key">Base URL</span> https://api.japanfold.com</div>
+  <div class="jf-endpoint"><span class="jf-key">Contract</span> <a href="https://api.japanfold.com/v1/openapi.json">/v1/openapi.json</a> <span class="jf-key">OpenAPI 3.1, the source of truth</span></div>
+</div>
+
+<div class="jf-cta" markdown>
+[Fold your first protein](#fold-your-first-protein-in-3-calls){ .md-button .md-button--primary }
+[API reference](api.html){ .md-button }
+[Try it in the browser](https://demo.japanfold.com){ .md-button }
+</div>
+</div>
 
 ## The model: submit → poll → download
 
@@ -54,16 +66,49 @@ binder design, model and parameter choice) is a variation on these calls.
 
 Read the guides in order, or jump to what you need:
 
-- **[Authentication](authentication.md)**: keyless by default; an optional Bearer key scopes jobs to you instead of your IP.
-- **[Predictions](predictions.md)**: input shapes, models, co-folding, affinity, params.
-- **[Designs](designs.md)**: BoltzGen and RFdiffusion3 binder design.
-- **[Embeddings](embeddings.md)**: ESMC and SaProt protein embeddings (per-residue + pooled).
-- **[Jobs](jobs.md)**: polling, listing, cancel/delete, results, logs, artifacts, archive.
-- **[Models & limits](models-and-limits.md)**: the model list, every parameter, and the caps.
-- **[Accuracy](accuracy.md)**: how JapanFold's output compares to each model's official reference implementation.
-- **[Errors](errors.md)**: the problem+json shape and the status codes.
-- **[Examples](examples.md)**: end-to-end fold, co-fold+affinity and design in curl and Python.
-- **[The JapanFold skill](skill.md)**: fold and design straight from your AI agent.
+<div class="grid cards" markdown>
+
+-   :material-key-variant:{ .lg .middle } **[Authentication](authentication.md)**
+
+    Keyless by default; an optional Bearer key scopes jobs to you instead of your IP.
+
+-   :material-cube-outline:{ .lg .middle } **[Predictions](predictions.md)**
+
+    Input shapes, models, co-folding, affinity, params.
+
+-   :material-shape-outline:{ .lg .middle } **[Designs](designs.md)**
+
+    BoltzGen and RFdiffusion3 binder design.
+
+-   :material-vector-arrange-below:{ .lg .middle } **[Embeddings](embeddings.md)**
+
+    ESMC and SaProt protein embeddings (per-residue + pooled).
+
+-   :material-clipboard-list-outline:{ .lg .middle } **[Jobs](jobs.md)**
+
+    Polling, listing, cancel/delete, results, logs, artifacts, archive.
+
+-   :material-tune:{ .lg .middle } **[Models & limits](models-and-limits.md)**
+
+    The model list, every parameter, and the caps.
+
+-   :material-target:{ .lg .middle } **[Accuracy](accuracy.md)**
+
+    How JapanFold's output compares to each model's official reference implementation.
+
+-   :material-alert-circle-outline:{ .lg .middle } **[Errors](errors.md)**
+
+    The problem+json shape and the status codes.
+
+-   :material-console:{ .lg .middle } **[Examples](examples.md)**
+
+    End-to-end fold, co-fold+affinity and design in curl and Python.
+
+-   :material-robot-outline:{ .lg .middle } **[The JapanFold skill](skill.md)**
+
+    Fold and design straight from your AI agent.
+
+</div>
 
 ## A note on network egress
 
@@ -71,3 +116,10 @@ Some environments sandbox outbound HTTP. If so, allow the host
 **`api.japanfold.com`**. If a request ever returns HTTP `403` with Cloudflare
 error `1010`, that is edge bot-filtering of your HTTP client, not an API error.
 Retry with a browser-like `User-Agent` header.
+
+<div class="jf-credits">
+  <span>Powered by</span>
+  <img class="jf-aiand" src="assets/aiand-logo.svg" alt="ai&amp;" />
+  <span>on</span>
+  <img src="assets/tenstorrent-logo.svg" alt="Tenstorrent" />
+</div>

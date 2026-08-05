@@ -3,57 +3,90 @@ site_description: JapanFold API documentation — free, public, Tenstorrent-acce
 site_url: https://docs.japanfold.com/
 repo_url: https://github.com/moritztng/japanfold
 repo_name: moritztng/japanfold
-edit_uri: edit/main/docs/
+edit_uri: edit/master/docs/
+copyright: JapanFold. Sovereign compute in Japan, powered by ai&amp; on Tenstorrent.
 
 nav:
-  - Overview: index.md
-  - Authentication: authentication.md
-  - Predictions: predictions.md
-  - Designs: designs.md
-  - Embeddings: embeddings.md
-  - Jobs: jobs.md
-  - Models & limits: models-and-limits.md
-  - Accuracy: accuracy.md
-  - Errors: errors.md
-  - Examples: examples.md
-  - The JapanFold skill: skill.md
-  - API reference: api.html
+  - Start here:
+      - Overview: index.md
+      - Authentication: authentication.md
+      - Examples: examples.md
+  - Endpoints:
+      - Predictions: predictions.md
+      - Designs: designs.md
+      - Embeddings: embeddings.md
+      - Jobs: jobs.md
+      - Errors: errors.md
+  - Reference:
+      - Models & limits: models-and-limits.md
+      - Accuracy: accuracy.md
+      - The JapanFold skill: skill.md
+      - API reference: api.html
 
 theme:
   name: material
+  logo: assets/japanfold-mark.svg
+  favicon: assets/favicon.png
+  # Same type system as the app: DM Sans for prose and UI, Fragment Mono for
+  # anything you would paste into a terminal.
+  font:
+    text: DM Sans
+    code: Fragment Mono
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: red
-      accent: red
       toggle:
-        icon: material/brightness-7
+        icon: material/weather-night
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: red
-      accent: red
       toggle:
-        icon: material/brightness-4
+        icon: material/weather-sunny
         name: Switch to light mode
+  icon:
+    repo: fontawesome/brands/github
   features:
     - navigation.instant
+    - navigation.instant.prefetch
     - navigation.tracking
+    - navigation.sections
     - navigation.top
+    - toc.follow
     - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
     - search.suggest
     - search.highlight
+    - search.share
 
 markdown_extensions:
   - admonition
-  - pymdownx.highlight
+  - attr_list
+  - md_in_html
+  - def_list
+  - tables
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
   - pymdownx.superfences
   - pymdownx.inlinehilite
-  - tables
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - toc:
       permalink: true
 
+extra_css:
+  - stylesheets/japanfold.css
+
 extra:
+  generator: false
   social:
+    - icon: fontawesome/solid/flask
+      link: https://japanfold.com
+      name: japanfold.com
     - icon: fontawesome/brands/github
       link: https://github.com/moritztng/japanfold
+      name: GitHub
