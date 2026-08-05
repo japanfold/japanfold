@@ -28,6 +28,7 @@ Errors come back as RFC 9457 problem+json:
 | `404` | No such job, or a job you don't own. | Check the id; jobs are scoped to their owner. |
 | `413` | Request body over 8 MB. | Shrink the input; you're almost certainly over `max_content_chars` anyway (see [Models & limits](models-and-limits.md)). |
 | `429` | At capacity or over a rate limit. | **Honor the `Retry-After` header**, then retry. See the limits page. |
+| `503` | The accelerators are offline for maintenance, so no job can start. | **Honor the `Retry-After` header** (5 minutes) and retry. Nothing is wrong with your request. |
 
 ## Handling 429 (at capacity)
 
@@ -44,6 +45,26 @@ if [ "$resp" = "429" ]; then
   # retry...
 fi
 ```
+
+## Handling 503 (maintenance)
+
+`429` and `503` mean different things. `429` is a queue: the hardware is running
+and your turn is coming. `503` means there is no hardware to run on at that
+moment, so submitting again immediately cannot succeed:
+
+```json
+{
+  "type":   "https://japanfold.com/errors/unavailable",
+  "title":  "Service Unavailable",
+  "status": 503,
+  "detail": "JapanFold's accelerators are offline for maintenance right now, so no jobs can start. Please try again in a few minutes.",
+  "instance": "/v1/predictions"
+}
+```
+
+Only job creation (`/v1/predictions`, `/v1/designs`, `/v1/embeddings`) returns
+it. Reading jobs and downloading results keep working, so anything you submitted
+earlier stays available.
 
 ## Cloudflare 403 / error 1010
 
