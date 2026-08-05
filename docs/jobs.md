@@ -18,6 +18,7 @@ reach jobs you own (see [Authentication](authentication.md)).
   "progress": 0.5,                // 0..1, or null when indeterminate
   "stage": "msa",                 // human-readable current step
   "done": 0, "total": 1,          // sub-units completed / total
+  "params": {},                   // the params the job was submitted with
   "error": null,                  // set when status=failed
   "created_at": "2026-07-09T12:16:06Z",
   "started_at":  "...",
@@ -78,6 +79,9 @@ of downloadable artifacts:
 ```bash
 curl -s https://api.japanfold.com/v1/jobs/$JOB/results
 ```
+
+Ask earlier and you get `{"object":"results","job_id":"...","ready":false,"status":"running"}`,
+so `ready` is safe to poll on directly.
 
 A **prediction** result:
 
