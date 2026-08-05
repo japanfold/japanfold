@@ -92,7 +92,7 @@ parameter choice are all variations on these three calls.
 
 -   :material-target:{ .lg .middle } **[Accuracy](accuracy.md)**
 
-    How JapanFold's output compares to each model's official reference implementation.
+    Output parity against each model's reference GPU implementation.
 
 -   :material-alert-circle-outline:{ .lg .middle } **[Errors](errors.md)**
 
