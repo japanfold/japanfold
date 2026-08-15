@@ -13,14 +13,14 @@ curl -s https://api.japanfold.com/v1/models
 
 ## Prediction models
 
-| `id` | MSA | Ligands | DNA/RNA | Affinity | Constr | PAE |
-|---|---|:-:|:-:|:-:|:-:|:-:|
-| `boltz2` | default | ✓ | ✓ | ✓ | ✓ | ✓ |
-| `esmfold2` | optional | - | - | - | - | - |
-| `esmfold2-fast` | never | - | - | - | - | - |
-| `protenix-v2` | default | ✓ | ✓ | - | - | ✓ |
-| `opendde` | default | - | - | - | - | - |
-| `opendde-abag` | default | - | - | - | - | - |
+| `id` | MSA | Ligands | DNA/RNA | Affinity | Constr | PAE | Max residues |
+|---|---|:-:|:-:|:-:|:-:|:-:|--:|
+| `boltz2` | default | ✓ | ✓ | ✓ | ✓ | ✓ | 1024 |
+| `esmfold2` | optional | - | - | - | - | - | 1024 |
+| `esmfold2-fast` | never | - | - | - | - | - | 1024 |
+| `protenix-v2` | default | ✓ | ✓ | - | - | ✓ | 980 |
+| `opendde` | default | - | - | - | - | - | 788 |
+| `opendde-abag` | default | - | - | - | - | - | 779 |
 
 MSA `default` means on unless you send `use_msa_server: false`; `never` means the
 model is always single-sequence.
@@ -42,13 +42,13 @@ Boltz-2 and both ESMFold-2 variants also accept modified residues.
 `POST /v1/embeddings` runs protein language models. Larger is a stronger
 representation at more compute per sequence. See [Embeddings](embeddings.md).
 
-| `id` | Name | Notes |
-|---|---|---|
-| `esmc-300m` | ESMC 300M | Quickest; strong general-purpose representation. |
-| `esmc-600m` | ESMC 600M | The balanced default. |
-| `esmc-6b` | ESMC 6B | Strongest representation, highest compute cost. |
-| `saprot-650m` | SaProt 650M | Trained on sequence + structure tokens, run sequence-only here. |
-| `saprot-1.3b` | SaProt 1.3B | Largest SaProt; trained to work sequence-only. |
+| `id` | Name | Max residues | Notes |
+|---|---|--:|---|
+| `esmc-300m` | ESMC 300M | 2000 | Quickest; strong general-purpose representation. |
+| `esmc-600m` | ESMC 600M | 2000 | The balanced default. |
+| `esmc-6b` | ESMC 6B | 1968 | Strongest representation, highest compute cost. |
+| `saprot-650m` | SaProt 650M | 2000 | Trained on sequence + structure tokens, run sequence-only here. |
+| `saprot-1.3b` | SaProt 1.3B | 2000 | Largest SaProt; trained to work sequence-only. |
 
 ## Prediction parameters
 
@@ -58,8 +58,8 @@ Sent as `params` on `POST /v1/predictions`. Out-of-range values are clamped.
 |---|---|---|---|---|
 | `use_msa_server` | bool | `true` | - | Build an MSA. Required for Boltz-2 and Protenix-v2, optional for ESMFold-2. |
 | `fast` | bool | `true` | - | Higher throughput, may be slightly less accurate. |
-| `recycling_steps` | int | `3` | 1–10 | More can improve accuracy, slower. |
-| `sampling_steps` | int | `200` | 10–500 | Diffusion steps per structure. |
+| `recycling_steps` | int | model default | 1–10 | Trunk recycles. Omit it: Boltz-2 uses 3, the others 10. |
+| `sampling_steps` | int | model default | 10–500 | Diffusion steps. Omit it: ESMFold-2 uses 100, the others 200. |
 | `diffusion_samples` | int | `1` | 1–5 | Structures generated per target. |
 | `output_format` | enum | `cif` | `cif`, `pdb` | Structure file format. |
 
@@ -105,7 +105,7 @@ capped. The full platform has no such limits.
 
 | Limit | Value | |
 |---|--:|---|
-| `max_residues` | 1024 | per structure |
+| `max_residues` | 1024 | per structure; per model: protenix-v2 980, opendde 788, opendde-abag 779 |
 | `max_chains_per_complex` | 10 | |
 | `max_ligands_per_complex` | 10 | |
 | `max_constraints_per_complex` | 20 | |
@@ -117,7 +117,7 @@ capped. The full platform has no such limits.
 | `max_rfd3_timesteps` | 200 | |
 | `max_structure_chars` | 700000 | pasted target structure |
 | `max_embed_sequences` | 50 | per submission |
-| `max_embed_sequence_residues` | 2000 | per sequence |
+| `max_embed_sequence_residues` | 2000 | per sequence; esmc-6b 1968 |
 | `max_recycling_steps` | 10 | |
 | `max_sampling_steps` | 500 | |
 | `max_diffusion_samples` | 5 | |
@@ -126,7 +126,7 @@ capped. The full platform has no such limits.
 | `max_active_jobs_per_session` | 3 | |
 | `max_submits_per_min` | 12 | service-wide |
 | `max_submits_per_min_per_ip` | 40 | |
-| `max_retained_jobs` | 200 | |
+| `max_retained_jobs` | 1000 | |
 | `max_runtime_predict_s` | 1500 | |
 | `max_runtime_design_s` | 2700 | |
 | `max_runtime_embed_s` | 300 | |

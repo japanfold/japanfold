@@ -172,7 +172,8 @@ named local directory, and tell the user the absolute path where you saved it.
 
 ## Limits & notes
 
-- Free public demo caps (same as the web app): **≤ 1024 residues/structure,
+- Free public demo caps (same as the web app): **≤ 1024 residues/structure
+  (protenix-v2 980, opendde 788, opendde-abag 779),
   ≤ 10 chains & ligands/complex, ≤ 10 structures/run, ≤ 10 designs/request
   (BoltzGen) or ≤ 5 (RFdiffusion3)**,
   plus per-IP rate limits. Over a cap → `400`; at capacity → `429` (respect

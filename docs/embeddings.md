@@ -123,7 +123,8 @@ headers as predictions
 
 ## Limits
 
-At most 50 sequences per submission and 2000 residues per sequence, higher than
+At most 50 sequences per submission and 2000 residues per sequence (1968 for
+esmc-6b), higher than
 the folding cap because embeddings run the language model only. Over a cap you
 get `400`, at capacity `429`. See
 [Models & limits](models-and-limits.md#limits) and [Errors](errors.md).
