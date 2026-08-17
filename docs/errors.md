@@ -7,7 +7,7 @@ Errors come back as RFC 9457 problem+json:
   "type":   "https://japanfold.com/errors/invalid-input",
   "title":  "Invalid request",
   "status": 400,
-  "detail": "unknown model 'nope' — choose one of ['boltz2', 'esmfold2', 'esmfold2-fast', 'opendde', 'opendde-abag', 'protenix-v2'].",
+  "detail": "unknown model 'nope' — choose one of ['boltz2', 'esmfold2', 'esmfold2-fast', 'openfold3', 'opendde', 'opendde-abag', 'protenix-v2'].",
   "instance": "/v1/predictions"
 }
 ```

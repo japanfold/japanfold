@@ -19,8 +19,9 @@ curl -s https://api.japanfold.com/v1/models
 | `esmfold2` | optional | - | - | - | - | - | 1024 |
 | `esmfold2-fast` | never | - | - | - | - | - | 1024 |
 | `protenix-v2` | default | ✓ | ✓ | - | - | ✓ | 980 |
-| `opendde` | default | - | - | - | - | - | 788 |
-| `opendde-abag` | default | - | - | - | - | - | 779 |
+| `openfold3` | default | - | ✓ | - | - | - | 576 |
+| `opendde` | default | - | - | - | - | - | 544 |
+| `opendde-abag` | default | - | - | - | - | - | 544 |
 
 MSA `default` means on unless you send `use_msa_server: false`; `never` means the
 model is always single-sequence.
@@ -29,7 +30,11 @@ model is always single-sequence.
 constraints and potentials. **ESMFold-2** is language-model folding, protein
 chains only; `esmfold2-fast` is always single-sequence, for screening many
 sequences at once. **Protenix-v2** is AlphaFold3-family (Pairformer + atom
-diffusion) and strong at antibody-antigen. The two **OpenDDE** checkpoints are
+diffusion) and strong at antibody-antigen. **OpenFold3** is the OpenFold
+Consortium's open AlphaFold3 reproduction, folding protein, RNA and DNA
+complexes; its published weights are a preview checkpoint trained well short of
+the full AlphaFold3 schedule, so read the confidence scores before trusting a
+prediction. The two **OpenDDE** checkpoints are
 protein-only: `opendde` for general complexes, `opendde-abag` to co-fold an
 antibody Fab heavy/light with its antigen. Both match the reference OpenDDE
 implementation, including its own weakness on some hard antibody-antigen targets,
@@ -57,7 +62,7 @@ Sent as `params` on `POST /v1/predictions`. Out-of-range values are clamped.
 | Key | Type | Default | Range | Notes |
 |---|---|---|---|---|
 | `use_msa_server` | bool | `true` | - | Build an MSA. Required for Boltz-2 and Protenix-v2, optional for ESMFold-2. |
-| `fast` | bool | `true` | - | Higher throughput, may be slightly less accurate. |
+| `fast` | bool | `true` | - | Higher throughput, may be slightly less accurate. Ignored for OpenFold3, which always runs the full-precision path. |
 | `recycling_steps` | int | model default | 1–10 | Trunk recycles. Omit it: Boltz-2 uses 3, the others 10. |
 | `sampling_steps` | int | model default | 10–500 | Diffusion steps. Omit it: ESMFold-2 uses 100, the others 200. |
 | `diffusion_samples` | int | `1` | 1–5 | Structures generated per target. |
@@ -105,7 +110,7 @@ capped. The full platform has no such limits.
 
 | Limit | Value | |
 |---|--:|---|
-| `max_residues` | 1024 | per structure; per model: protenix-v2 980, opendde 788, opendde-abag 779 |
+| `max_residues` | 1024 | per structure; per model: protenix-v2 980, openfold3 576, opendde 544, opendde-abag 544 |
 | `max_chains_per_complex` | 10 | |
 | `max_ligands_per_complex` | 10 | |
 | `max_constraints_per_complex` | 20 | |
