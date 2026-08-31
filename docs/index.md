@@ -6,9 +6,10 @@
 <p class="jf-lede">
 Fold proteins, co-fold complexes with ligands (and get binding affinity),
 design de-novo binders, and compute protein embeddings, over a <strong>free,
-public, keyless HTTP API</strong>. Boltz-2, ESMFold-2, Protenix-v2 and OpenDDE
-for structure prediction, BoltzGen and RFdiffusion3 for binder design, ESMC and
-SaProt for embeddings. No API key, no local GPU, nothing to install.
+public, keyless HTTP API</strong>. Boltz-2, ESMFold-2, Protenix-v2, OpenFold3,
+OpenBind-0 and OpenDDE for structure prediction, BoltzGen, RFdiffusion3 and
+PXDesign for binder design, ESMC and SaProt for embeddings. No API key, no local
+GPU, nothing to install.
 </p>
 
 <div class="jf-pills">
@@ -76,7 +77,7 @@ parameter choice are all variations on these three calls.
 
 -   :material-shape-outline:{ .lg .middle } **[Designs](designs.md)**
 
-    BoltzGen and RFdiffusion3 binder design.
+    BoltzGen, RFdiffusion3 and PXDesign binder design.
 
 -   :material-vector-arrange-below:{ .lg .middle } **[Embeddings](embeddings.md)**
 

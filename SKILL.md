@@ -2,8 +2,9 @@
 name: japanfold
 description: >-
   Predict 3D biomolecular structures and binding affinity (Boltz-2, ESMFold2,
-  Protenix, OpenDDE) and design de-novo binders/proteins (BoltzGen,
-  RFdiffusion3) via JapanFold — a free, public, Tenstorrent-accelerated HTTP
+  Protenix, OpenFold3, OpenBind-0, OpenDDE) and design de-novo binders/proteins
+  (BoltzGen, RFdiffusion3, PXDesign) via JapanFold — a free, public,
+  Tenstorrent-accelerated HTTP
   API. Use to fold a protein or complex, co-fold a protein with a ligand and
   get affinity, fold an antibody-antigen complex, design
   nanobody/antibody/peptide/miniprotein binders against a target, scaffold a
@@ -32,8 +33,9 @@ allowed-tools:
 
 # JapanFold — hosted structure prediction & binder design
 
-JapanFold runs Boltz-2 / ESMFold2 / Protenix (structure + affinity), BoltzGen
-and RFdiffusion3 (binder/protein design), and ESMC / SaProt (embeddings) on
+JapanFold runs Boltz-2 / ESMFold2 / Protenix / OpenFold3 / OpenBind-0 / OpenDDE
+(structure + affinity), BoltzGen / RFdiffusion3 / PXDesign (binder design), and
+ESMC / SaProt (embeddings) on
 Tenstorrent hardware behind a **free public HTTP API**. You
 call it as an async job — **submit → poll → download** — over plain HTTPS against
 `https://api.japanfold.com`. No API key, no model to install, no local GPU.
@@ -97,7 +99,8 @@ res = httpx.get(f"{BASE}/v1/jobs/{job['id']}/results").json()
 - **Models:** `boltz2` (default; MSA + ligands + affinity), `esmfold2`,
   `esmfold2-fast` (single-sequence, fastest), `protenix-v2`, `openfold3` (the
   OpenFold Consortium's AlphaFold3 reproduction, preview weights; protein / RNA
-  / DNA, no ligands or affinity), and the OpenDDE
+  / DNA, no ligands or affinity), `openbind` (the same stack on the OpenBind-0
+  checkpoint, which does co-fold ligands), and the OpenDDE
   family — `opendde` (general protein-complex checkpoint) and `opendde-abag`
   (antibody-antigen checkpoint), both protein-only with MSA on by default, no
   affinity. `opendde-abag`'s accuracy matches the reference OpenDDE
@@ -121,8 +124,9 @@ Protocols: `protein-anything`, `peptide-anything`, `nanobody-anything`,
 `antibody-anything`, `protein-small_molecule`, `protein-redesign`. Poll the same
 way; `/v1/jobs/{id}/results` returns the ranked designs.
 
-The protocol implies the design model; an explicit `model` (`boltzgen`/`rfd3`,
-the CLI's `--model` vocabulary) is accepted but must match it.
+The protocol implies the design model; an explicit `model`
+(`boltzgen`/`rfd3`/`pxdesign`, the CLI's `--model` vocabulary) is accepted but
+must match it.
 
 ## Design against a structure (RFdiffusion3)
 
@@ -143,6 +147,23 @@ curl -s -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
 - Results are **unranked** mmCIFs (no refold/filter scores). To sanity-check a
   design, refold its sequence against the target with `POST /v1/predictions`
   and read `iptm`.
+
+## Design backbones against a structure (PXDesign)
+
+Same endpoint again. PXDesign conditions on a distogram of the target chains you
+name and returns binder backbones — coordinates only, no sequence, no ranking,
+no confidence. It is the fastest of the three; run the backbones through a
+sequence-design tool before ordering anything.
+
+```bash
+curl -s -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
+  -d '{"protocol":"pxdesign-binder","structure":"<PDB or mmCIF text>","chains":"A","binder_length":80,"hotspots":"A74,A75,A76","params":{"num_designs":4,"n_step":200}}'
+```
+
+- `chains` names the target chains to condition on; `binder_length` is the
+  binder's residue count (≤ 200); `hotspots` is optional, target residues to aim at.
+- One protocol: `pxdesign-binder`. Target ≤ 768 residues.
+- Caps: ≤ 8 designs, ≤ 400 steps.
 
 ## Embed sequences (ESMC / SaProt)
 
@@ -175,9 +196,9 @@ named local directory, and tell the user the absolute path where you saved it.
 ## Limits & notes
 
 - Free public demo caps (same as the web app): **≤ 1024 residues/structure
-  (protenix-v2 980, openfold3 576, opendde 544, opendde-abag 544),
+  (protenix-v2 980, openfold3 576, openbind 576, opendde 544, opendde-abag 544),
   ≤ 10 chains & ligands/complex, ≤ 10 structures/run, ≤ 10 designs/request
-  (BoltzGen) or ≤ 5 (RFdiffusion3)**,
+  (BoltzGen), ≤ 5 (RFdiffusion3) or ≤ 8 (PXDesign)**,
   plus per-IP rate limits. Over a cap → `400`; at capacity → `429` (respect
   `Retry-After`). Numeric params are clamped to range.
 - Errors are RFC 9457 problem+json (`title`, `detail`).

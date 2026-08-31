@@ -109,7 +109,7 @@ A **prediction** result:
   the affinity fields. A rough read: interface `iptm` > 0.5, fold
   `complex_plddt` > 0.7.
 - A **design** result carries `designs` instead of `rows`, ranked for BoltzGen
-  and unranked for RFdiffusion3. An **embed** result carries `sequences`; see
+  and unranked for RFdiffusion3 and PXDesign. An **embed** result carries `sequences`; see
   [Embeddings → Results](embeddings.md#results).
 - `artifacts[].url` and `archive_url` are paths under the base URL. Prefix them
   with `https://api.japanfold.com`.

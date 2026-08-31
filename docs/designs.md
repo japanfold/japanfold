@@ -1,15 +1,16 @@
 # Designs
 
-`POST /v1/designs` designs de-novo proteins against a target. Two engines share
+`POST /v1/designs` designs de-novo proteins against a target. Three engines share
 the endpoint: [BoltzGen](https://github.com/jwohlwend/boltz) takes a sequence or
 ligand target and returns designs **ranked** by predicted confidence;
 RFdiffusion3 takes a pasted **structure** plus a contig and returns them
-**unranked**. Both return a job to poll, exactly like a
-[prediction](predictions.md).
+**unranked**; PXDesign takes a pasted **structure** plus the target chains and
+returns binder backbones with no sequence at all. All three return a job to
+poll, exactly like a [prediction](predictions.md).
 
 The protocol implies the model. You may pass `model` explicitly
-(`boltzgen` or `rfd3` — the same vocabulary as the CLI's `--model`), but it
-must match the protocol's model; a mismatch is a 400.
+(`boltzgen`, `rfd3` or `pxdesign` — the same vocabulary as the CLI's `--model`),
+but it must match the protocol's model; a mismatch is a 400.
 
 ## BoltzGen: binders against a sequence or ligand
 
@@ -79,6 +80,32 @@ RFdiffusion3 designs are unranked: there is no refold-and-filter step, so you ge
 one mmCIF per design with no confidence scores. To check one, fold its sequence
 back onto the target with a [prediction](predictions.md) and read the interface
 confidence (`iptm`).
+
+## PXDesign: binder backbones against a structure
+
+PXDesign conditions on a distogram of the target chains you name and generates
+binder backbones. It is the fastest of the three and the least finished output:
+coordinates only, no sequence, no ranking, no confidence score. Run the
+backbones through a sequence-design tool before ordering anything. For a ranked,
+sequenced binder use BoltzGen.
+
+```bash
+curl -s -X POST https://api.japanfold.com/v1/designs \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "protocol":"pxdesign-binder",
+    "structure":"<PDB or mmCIF text>",
+    "chains":"A",
+    "binder_length":80,
+    "hotspots":"A74,A75,A76",
+    "params":{"num_designs":4,"n_step":200}
+  }'
+```
+
+`chains` names the target chains to condition on, `binder_length` is the
+residue count of the binder to generate (max 200), and `hotspots` is optional:
+target residues the binder should aim at. One protocol, `pxdesign-binder`.
+The target may be up to 768 residues.
 
 ## Reading designs
 

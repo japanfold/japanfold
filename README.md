@@ -2,8 +2,8 @@
 
 Fold proteins, co-fold with ligands (+ binding affinity), and design binders
 from your AI agent, via the free public [JapanFold](https://japanfold.com) API.
-**No API key, no local GPU.** Runs Boltz-2 / ESMFold2 / Protenix / BoltzGen /
-RFdiffusion3 on Tenstorrent.
+**No API key, no local GPU.** Runs Boltz-2 / ESMFold2 / Protenix / OpenFold3 /
+OpenBind-0 / OpenDDE / BoltzGen / RFdiffusion3 / PXDesign on Tenstorrent.
 
 It's a single [`SKILL.md`](SKILL.md) built on the open [Agent Skills](https://agentskills.io)
 standard, so it installs into **any** compatible harness with one command.
