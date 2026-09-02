@@ -2,7 +2,7 @@
 name: japanfold
 description: >-
   Predict 3D biomolecular structures and binding affinity (Boltz-2, ESMFold2,
-  Protenix, OpenFold3, OpenBind-0, OpenDDE) and design de-novo binders/proteins
+  Protenix, OpenFold3, OpenBind-0, RoseTTAFold3, OpenDDE) and design de-novo binders/proteins
   (BoltzGen, RFdiffusion3, PXDesign) via JapanFold — a free, public,
   Tenstorrent-accelerated HTTP
   API. Use to fold a protein or complex, co-fold a protein with a ligand and
@@ -33,7 +33,7 @@ allowed-tools:
 
 # JapanFold — hosted structure prediction & binder design
 
-JapanFold runs Boltz-2 / ESMFold2 / Protenix / OpenFold3 / OpenBind-0 / OpenDDE
+JapanFold runs Boltz-2 / ESMFold2 / Protenix / OpenFold3 / OpenBind-0 / RoseTTAFold3 / OpenDDE
 (structure + affinity), BoltzGen / RFdiffusion3 / PXDesign (binder design), and
 ESMC / SaProt (embeddings) on
 Tenstorrent hardware behind a **free public HTTP API**. You
@@ -100,7 +100,10 @@ res = httpx.get(f"{BASE}/v1/jobs/{job['id']}/results").json()
   `esmfold2-fast` (single-sequence, fastest), `protenix-v2`, `openfold3` (the
   OpenFold Consortium's AlphaFold3 reproduction, preview weights; protein / RNA
   / DNA, no ligands or affinity), `openbind` (the same stack on the OpenBind-0
-  checkpoint, which does co-fold ligands), and the OpenDDE
+  checkpoint, which does co-fold ligands), `rf3` (RoseTTAFold3, the RoseTTAFold
+  line's AlphaFold3; co-folds ligands, and folds up to 627 residues per structure
+  — over that the API refuses at submit and names the models that do take it),
+  and the OpenDDE
   family — `opendde` (general protein-complex checkpoint) and `opendde-abag`
   (antibody-antigen checkpoint), both protein-only with MSA on by default, no
   affinity. `opendde-abag`'s accuracy matches the reference OpenDDE
