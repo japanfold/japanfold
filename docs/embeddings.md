@@ -17,8 +17,10 @@ For every sequence you get both:
   For one vector per protein: similarity, clustering, a sequence-level
   classifier.
 
-`d_model` depends on the model (960 for `esmc-300m`, 1152 for `esmc-600m`) and is
-reported in the results.
+`d_model` depends on the model and comes back in the results: 960 for
+`esmc-300m`, 1152 for `esmc-600m`, 2560 for `esmc-6b`, 1280 for both SaProt
+sizes. `saprot-1.3b` is deeper than `saprot-650m`, not wider, so the vector width
+is the same.
 
 ## Input
 

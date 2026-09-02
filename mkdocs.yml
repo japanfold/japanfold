@@ -1,5 +1,5 @@
 site_name: JapanFold API
-site_description: JapanFold API documentation — free, public, Tenstorrent-accelerated protein structure prediction and binder design.
+site_description: JapanFold API documentation. Free, public, Tenstorrent-accelerated protein structure prediction, binder design and protein embeddings.
 site_url: https://docs.japanfold.aiand.com/
 repo_url: https://github.com/japanfold/japanfold
 repo_name: japanfold/japanfold

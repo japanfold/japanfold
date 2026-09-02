@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none" role="img" aria-label="JapanFold">
   <!-- A protein chain folding: residues (nodes) linked by backbone bonds,
-       curling into a folded structure. Protein folding & de-novo design. -->
+       curling into a folded structure. Protein folding & de novo design. -->
   <g stroke="#9a9ca3" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
     <polyline points="11,21 11,12 19,8 27,13 28,22 20,27" />
   </g>
