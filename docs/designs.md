@@ -1,18 +1,18 @@
 # Designs
 
 `POST /v1/designs` designs de novo proteins against a target. Three engines share
-the endpoint: [BoltzGen](https://github.com/HannesStark/boltzgen) takes a sequence or
-ligand target and returns designs **ranked** by predicted confidence;
-RFdiffusion3 takes a pasted **structure** plus a contig and returns them
-**unranked**; PXDesign takes a pasted **structure** plus the target chains and
-returns binder backbones with no sequence at all. All three return a job to
-poll, exactly like a [prediction](predictions.md).
+the endpoint: [BoltzGen](https://github.com/HannesStark/boltzgen) takes a
+protein, small-molecule, DNA or RNA target and returns designs **ranked** by
+predicted confidence; RFdiffusion3 takes a pasted **structure** plus a contig
+and returns them **unranked**; PXDesign takes a pasted **structure** plus the
+target chains and returns binder backbones with no sequence at all. All three
+return a job to poll, exactly like a [prediction](predictions.md).
 
 The protocol implies the model. You may pass `model` explicitly (`boltzgen`,
 `rfd3` or `pxdesign`), but it has to match the protocol's model; a mismatch is a
 `400`.
 
-## BoltzGen: binders against a sequence or ligand
+## BoltzGen: binders against a protein, ligand or nucleic acid
 
 ```bash
 curl -s -X POST https://api.japanfold.aiand.com/v1/designs \
@@ -67,6 +67,9 @@ curl -s -X POST https://api.japanfold.aiand.com/v1/designs \
   keeps those residues fixed; a bare number like `60-80` designs that many new
   residues. So `"A1-150,60-80"` keeps target chain A, then designs a 60 to 80
   residue binder.
+- **Size**: the contig, not the paste, sets how big the run is. Motif plus
+  designed residues has to come to 490 or fewer, so a large structure is fine as
+  long as the contig selects less of it.
 - **`params`**: `num_designs`, `num_timesteps`, `seed`. See
   [Models & limits](models-and-limits.md#design-protocols-and-parameters).
 
@@ -103,9 +106,10 @@ curl -s -X POST https://api.japanfold.aiand.com/v1/designs \
 ```
 
 `chains` names the target chains to condition on, `binder_length` is the
-residue count of the binder to generate (max 200), and `hotspots` is optional:
-target residues the binder should aim at. One protocol, `pxdesign-binder`.
-The target may be up to 768 residues.
+residue count of the binder to generate (8 to 200), and `hotspots` is optional:
+target residues the binder should aim at. One protocol, `pxdesign-binder`. Only
+the named chains count toward the size ceiling, and the binder counts too: their
+sum has to be 768 or fewer, so a large file is fine if you name one small chain.
 
 ## Reading designs
 

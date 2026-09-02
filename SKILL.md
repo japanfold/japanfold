@@ -138,8 +138,8 @@ curl -s -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
 
 Protocols: `protein-anything`, `peptide-anything`, `nanobody-anything`,
 `antibody-anything`, `protein-small_molecule`, `protein-redesign`. Poll the same
-way; `/v1/jobs/{id}/results` returns the ranked designs. BoltzGen is from MIT and
-takes targets up to 1024 residues.
+way; `/v1/jobs/{id}/results` returns the ranked designs. BoltzGen is from MIT.
+The target can be a protein, a small molecule, DNA or RNA, up to 1024 residues.
 
 The protocol implies the design model. An explicit `model` of `boltzgen`, `rfd3`
 or `pxdesign` is accepted but has to match it.
@@ -160,7 +160,9 @@ curl -s -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
   target and designs a 60 to 80 residue binder.
 - Protocols: `rfd3-binder` (protein target), `rfd3-scaffold` (build around a
   fixed motif), `rfd3-na-binder` (DNA/RNA target).
-- Caps: 5 designs, 200 timesteps, target 490 residues, structure 700k chars.
+- Caps: 5 designs, 200 timesteps, structure 700k chars, and 490 residues for the
+  contig's motif plus designed regions. The contig, not the paste, sets the run
+  size, so a large structure is fine if the contig selects less of it.
 - Results are **unranked** mmCIFs, with no refold or filter scores. To
   sanity-check a design, refold its sequence against the target with
   `POST /v1/predictions` and read `iptm`.
@@ -178,9 +180,10 @@ curl -s -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
 ```
 
 - `chains` names the target chains to condition on; `binder_length` is the
-  binder's residue count (max 200); `hotspots` is optional, target residues to
+  binder's residue count (8 to 200); `hotspots` is optional, target residues to
   aim at.
-- One protocol: `pxdesign-binder`. Target up to 768 residues.
+- One protocol: `pxdesign-binder`. The named chains plus the binder have to come
+  to 768 residues or fewer; chains you don't name aren't counted.
 - Caps: 8 designs, 400 steps.
 
 ## Embed sequences (ESMC / SaProt)
@@ -202,6 +205,8 @@ curl -s -X POST $BASE/v1/embeddings -H 'Content-Type: application/json' \
   `[L, d_model]` + pooled `[d_model]` per sequence; `parquet` = pooled table only), `fast`.
 - Caps: 50 sequences per submission, 2000 residues per sequence, 1968 for
   `esmc-6b`.
+- `d_model` is 960 / 1152 / 2560 for ESMC 300M / 600M / 6B and 1280 for both
+  SaProt sizes (1.3B is deeper than 650M, not wider).
 - Results carry `kind: "embed"`, `d_model`, a `sequences` list and `artifacts` URLs.
   Download the `.npz`/`.parquet` files into a named dir and tell the user the path.
 

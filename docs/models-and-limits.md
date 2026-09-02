@@ -92,8 +92,10 @@ designs: `rfd3-binder`, `rfd3-scaffold`, `rfd3-na-binder`. **PXDesign**
 (ByteDance) has one protocol, `pxdesign-binder`: a pasted `structure`, the target
 `chains` to condition on and a `binder_length`, with optional `hotspots`. It
 returns binder backbones, coordinates only, with no sequence and no ranking.
-Target ceilings differ by model: BoltzGen 1024 residues, RFdiffusion3 490,
-PXDesign 768. [Designs](designs.md) says what each one does.
+Size ceilings differ by model and each counts something different: BoltzGen
+1024 residues of target spec, RFdiffusion3 490 for the contig's motif plus its
+designed residues, PXDesign 768 for the named target chains plus the binder.
+[Designs](designs.md) says what each one does.
 
 BoltzGen:
 
