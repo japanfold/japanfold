@@ -4,7 +4,7 @@ site_url: https://docs.japanfold.aiand.com/
 repo_url: https://github.com/japanfold/japanfold
 repo_name: japanfold/japanfold
 edit_uri: edit/master/docs/
-copyright: JapanFold. Sovereign compute in Japan, powered by ai&amp; on Tenstorrent.
+copyright: JapanFold. 100% Japan-hosted, powered by ai&amp; on Tenstorrent.
 
 nav:
   - Start here:

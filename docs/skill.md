@@ -5,6 +5,11 @@ JapanFold skill: a single [`SKILL.md`](https://github.com/japanfold/japanfold/bl
 built on the open [Agent Skills](https://agentskills.io) standard. It teaches
 your agent the API, so you can ask in plain language.
 
+The repo exposes it at two paths. The `npx skills` installer and anyone
+downloading the raw file take the root `SKILL.md`; the Claude Code plugin
+marketplace loads `plugins/japanfold/skills/japanfold/SKILL.md`, which is a
+symlink to it, so the two cannot drift.
+
 ## Install
 
 One line installs it into any compatible harness (Claude Code, Cursor, Codex,
