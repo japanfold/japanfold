@@ -24,7 +24,6 @@ curl -s https://api.japanfold.aiand.com/v1/models
 | `rf3` | default | ✓ | ✓ | - | - | - | 627 |
 | `opendde` | default | - | - | - | - | - | 544 |
 | `opendde-abag` | default | - | - | - | - | - | 544 |
-| `nesso1` | never | ✓ | - | ✓ | - | - | 1024 |
 
 MSA `default` means on unless you send `use_msa_server: false`; `never` means the
 model is always single-sequence.
@@ -48,14 +47,6 @@ protein-only: `opendde` for general complexes, `opendde-abag` to co-fold an
 antibody Fab heavy/light with its antigen. Both match the reference OpenDDE
 implementation, including its own weakness on some hard antibody-antigen targets,
 so don't expect uniform accuracy on every input. See [Accuracy](accuracy.md).
-
-**Nesso-1** is the one model here that returns no structure. It reads binding
-affinity off a soft distogram instead of docking the ligand, which makes it cheap
-enough to rank a series: send a protein, a ligand and a
-`properties.affinity.binder`, and the results carry the affinity scalars and a CSV
-where the others carry coordinates. It is the same `POST /v1/predictions` job, and a
-submission without a ligand and a binder is refused. Use Boltz-2 when you want the
-bound pose as well.
 
 Boltz-2 and both ESMFold-2 variants also accept modified residues.
 

@@ -52,7 +52,7 @@ curl -s -X POST https://api.japanfold.aiand.com/v1/predictions \
 
 Set `model`, default `boltz2`. Boltz-2 is the most capable and the only model that
 returns a structure with an affinity, constraints and potentials; ESMFold-2 and
-OpenDDE are protein-only; `nesso1` returns an affinity and no structure. The full
+OpenDDE are protein-only. The full
 capability matrix is on
 [Models & limits](models-and-limits.md#prediction-models).
 
