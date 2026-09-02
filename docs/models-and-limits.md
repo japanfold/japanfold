@@ -9,7 +9,7 @@ endpoint.
 curl -s https://api.japanfold.aiand.com/v1/models
 ```
 
-`GET /v1/health` is a plain liveness check (`{"status":"ok","service":"japanfold","api_version":"1.0.0"}`).
+`GET /v1/health` is a plain liveness check (`{"api_version":"1.0.0","service":"japanfold","status":"ok"}`).
 
 ## Prediction models
 
