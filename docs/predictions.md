@@ -50,10 +50,9 @@ curl -s -X POST https://api.japanfold.aiand.com/v1/predictions \
 
 ## Choosing a model
 
-Set `model`, default `boltz2`. Boltz-2 is the most capable and the only model that
-returns a structure with an affinity, constraints and potentials; ESMFold-2 and
-OpenDDE are protein-only. The full
-capability matrix is on
+Set `model`, default `boltz2`. Boltz-2 is the most capable and the only one that
+returns a binding affinity or accepts constraints; ESMFold-2 and OpenDDE are
+protein-only. The full capability matrix is on
 [Models & limits](models-and-limits.md#prediction-models).
 
 ## Co-folding with a ligand + affinity (Boltz-2)
@@ -70,8 +69,17 @@ curl -s -X POST https://api.japanfold.aiand.com/v1/predictions \
   }'
 ```
 
-The results then carry affinity fields alongside the structure and confidence
-scores (see [Jobs → Results](jobs.md#results)).
+The result row then carries two affinity numbers alongside the structure and
+confidence scores (see [Jobs → Results](jobs.md#results)):
+
+- `affinity_pred_value`: predicted log10(IC50) with IC50 in μM, so **lower is a
+  stronger binder**. Boltz's own guidance is to use it to rank actives against
+  each other, not to call a compound active or inactive.
+- `affinity_probability_binary`: probability the ligand binds at all, 0-1, so
+  higher is stronger.
+
+Both also come back with a `1` and `2` suffix, the two ensemble members, plus
+`affinity_runtime_s` and `structure_runtime_s`.
 
 ## Parameters
 

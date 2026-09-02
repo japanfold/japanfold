@@ -13,7 +13,7 @@ curl -s https://api.japanfold.aiand.com/v1/models
 
 ## Prediction models
 
-| `id` | MSA | Ligands | DNA/RNA | Affinity | Constr | PAE | Max residues |
+| `id` | MSA | Ligands | DNA/RNA | Affinity | Constr | PDE | Max residues |
 |---|---|:-:|:-:|:-:|:-:|:-:|--:|
 | `boltz2` | default | ✓ | ✓ | ✓ | ✓ | ✓ | 1024 |
 | `esmfold2` | optional | - | - | - | - | - | 1024 |
@@ -26,34 +26,39 @@ curl -s https://api.japanfold.aiand.com/v1/models
 | `opendde-abag` | default | - | - | - | - | - | 544 |
 
 MSA `default` means on unless you send `use_msa_server: false`; `never` means the
-model is always single-sequence.
+model is always single-sequence. PDE is predicted distance error: Boltz-2 is the
+only model whose result rows carry `complex_pde` / `complex_ipde`. Nothing here
+returns a PAE matrix.
 
-**Boltz-2** is the default, the most capable, and the only model with affinity
-and constraints. **ESMFold-2** is language-model folding, protein
-chains only; `esmfold2-fast` is always single-sequence, for screening many
-sequences at once. **Protenix-v2** is AlphaFold3-family (Pairformer + atom
-diffusion) and strong at antibody-antigen. **OpenFold3** is the OpenFold
-Consortium's open AlphaFold3 reproduction, folding protein, RNA and DNA
-complexes; its published weights are a preview checkpoint trained well short of
-the full AlphaFold3 schedule, so read the confidence scores before trusting a
-prediction. **OpenBind-0** is the same OpenFold3 stack on the consortium's
-OpenBind checkpoint, which co-folds small-molecule ligands the preview weights
-refuse. **RoseTTAFold3** is the Baker lab's AlphaFold3-family folder, taking
-proteins, RNA, DNA and small-molecule ligands. It reads covalent modifications,
-bond constraints and cyclic chains only from its own JSON spec, which this API does
-not expose, so an input carrying any of those is refused rather than folded without
-them. The two **OpenDDE** checkpoints are
-protein-only: `opendde` for general complexes, `opendde-abag` to co-fold an
-antibody Fab heavy/light with its antigen. Both match the reference OpenDDE
-implementation, including its own weakness on some hard antibody-antigen targets,
-so don't expect uniform accuracy on every input. See [Accuracy](accuracy.md).
+**Boltz-2** (MIT and Recursion) is the default, the most capable, and the only
+model with affinity and constraints. **ESMFold-2** (Biohub) is language-model
+folding, protein chains only; `esmfold2-fast` is always single-sequence, for
+screening many sequences at once. **Protenix-v2** (ByteDance) is
+AlphaFold3-family (Pairformer + atom diffusion) and strong at antibody-antigen.
+**OpenFold3** is the OpenFold Consortium's open AlphaFold3 reproduction, folding
+protein, RNA and DNA complexes; its published weights are a preview checkpoint
+trained well short of the full AlphaFold3 schedule, so read the confidence scores
+before trusting a prediction. **OpenBind-0** is the same OpenFold3 stack on the
+consortium's OpenBind checkpoint, which co-folds small-molecule ligands the
+preview weights refuse. **RoseTTAFold3** comes from the Institute for Protein
+Design (the Baker and DiMaio labs at the University of Washington) and is
+AlphaFold3-family too, taking proteins, RNA, DNA and small-molecule ligands. It
+reads covalent modifications, bond constraints and cyclic chains only from its
+own JSON spec, which this API does not expose, so an input carrying any of those
+is refused rather than folded without them. The two **OpenDDE** checkpoints,
+from Aureka, are protein-only: `opendde` for general complexes, `opendde-abag`
+to co-fold an antibody Fab's heavy and light chains with their antigen. Both
+match the reference OpenDDE implementation, including its own weakness on some
+hard antibody-antigen targets, so don't expect uniform accuracy on every input.
+See [Accuracy](accuracy.md).
 
 Boltz-2 and both ESMFold-2 variants also accept modified residues.
 
 ## Embedding models
 
-`POST /v1/embeddings` runs protein language models. Larger is a stronger
-representation at more compute per sequence. See [Embeddings](embeddings.md).
+`POST /v1/embeddings` runs protein language models: ESMC from Biohub, SaProt
+from Westlake University. Larger is a stronger representation at more compute
+per sequence. See [Embeddings](embeddings.md).
 
 | `id` | Name | Max residues | Notes |
 |---|---|--:|---|
@@ -70,25 +75,25 @@ Sent as `params` on `POST /v1/predictions`. Out-of-range values are clamped.
 | Key | Type | Default | Range | Notes |
 |---|---|---|---|---|
 | `use_msa_server` | bool | `true` | - | Build an MSA. Boltz-2 cannot fold single-sequence, so `false` is forced back to `true` for it. Every other model honours it. |
-| `fast` | bool | `true` | - | Higher throughput, may be slightly less accurate. Ignored for OpenFold3 and OpenBind-0, which always run the full-precision path. |
+| `fast` | bool | `true` | - | Higher throughput, may be slightly less accurate. Ignored for OpenFold3, OpenBind-0 and RoseTTAFold3, which have no fast path. |
 | `recycling_steps` | int | model default | 1–10 | Trunk recycles. Omit it: Boltz-2 uses 3, the others 10. |
-| `sampling_steps` | int | model default | 10–500 | Diffusion steps. Omit it: ESMFold-2 uses 100, the others 200. |
+| `sampling_steps` | int | model default | 10–500 | Diffusion steps. Omit it: ESMFold-2 uses 100, RoseTTAFold3 50, the others 200. |
 | `diffusion_samples` | int | `1` | 1–5 | Structures generated per target. |
 | `output_format` | enum | `cif` | `cif`, `pdb` | Structure file format. |
 
 ## Design protocols and parameters
 
-Three design models share `POST /v1/designs`. **BoltzGen** protocols take a YAML `spec`
-and return ranked designs: `protein-anything`, `peptide-anything`,
+Three design models share `POST /v1/designs`. **BoltzGen** (MIT) protocols take
+a YAML `spec` and return ranked designs: `protein-anything`, `peptide-anything`,
 `nanobody-anything`, `antibody-anything`, `protein-small_molecule`,
-`protein-redesign`. **RFdiffusion3** protocols take a pasted `structure` plus a
-`contig` and return unranked all-atom designs: `rfd3-binder`, `rfd3-scaffold`,
-`rfd3-na-binder`. **PXDesign** has one protocol, `pxdesign-binder`: a pasted
-`structure`, the target `chains` to condition on and a `binder_length`, with
-optional `hotspots`. It returns binder backbones, coordinates only, with no
-sequence and no ranking. Target ceilings differ by model: BoltzGen 1024
-residues, RFdiffusion3 490, PXDesign 768. [Designs](designs.md) says what each
-one does.
+`protein-redesign`. **RFdiffusion3** (the Institute for Protein Design)
+protocols take a pasted `structure` plus a `contig` and return unranked all-atom
+designs: `rfd3-binder`, `rfd3-scaffold`, `rfd3-na-binder`. **PXDesign**
+(ByteDance) has one protocol, `pxdesign-binder`: a pasted `structure`, the target
+`chains` to condition on and a `binder_length`, with optional `hotspots`. It
+returns binder backbones, coordinates only, with no sequence and no ranking.
+Target ceilings differ by model: BoltzGen 1024 residues, RFdiffusion3 490,
+PXDesign 768. [Designs](designs.md) says what each one does.
 
 BoltzGen:
 
@@ -152,8 +157,8 @@ capped. The full platform has no such limits.
 | `max_diffusion_samples` | 5 | |
 | `max_active_jobs` | 64 | service-wide |
 | `max_active_jobs_per_ip` | 8 | |
-| `max_active_jobs_per_session` | 3 | |
-| `max_submits_per_min` | 12 | service-wide |
+| `max_active_jobs_per_session` | 3 | the concurrency cap that binds an API caller |
+| `max_submits_per_min` | 12 | per caller |
 | `max_submits_per_min_per_ip` | 40 | |
 | `max_retained_jobs` | 1000 | |
 | `max_runtime_predict_s` | 1500 | |
@@ -161,7 +166,7 @@ capped. The full platform has no such limits.
 | `max_runtime_embed_s` | 300 | |
 | `max_stall_s` | 600 | predict |
 | `max_stall_design_s` | 1200 | |
-| `max_stall_embed_s` | 120 | |
+| `max_stall_embed_s` | 240 | |
 
 Over a size cap you get `400`. At capacity or over a rate limit you get `429`
 with `Retry-After`. See [Errors](errors.md).
