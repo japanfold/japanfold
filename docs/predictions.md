@@ -11,7 +11,7 @@ Provide exactly one of these.
 ### 1. `sequence`: a single protein chain
 
 ```bash
-curl -s -X POST https://api.japanfold.com/v1/predictions \
+curl -s -X POST https://fold-api.aiand.com/v1/predictions \
   -H 'Content-Type: application/json' \
   -d '{"model":"boltz2","name":"myprotein","sequence":"MKTAYIAKQRQISFVKSHFSRQLEE"}'
 ```
@@ -24,7 +24,7 @@ YAML or a FASTA. Note the `\n` newlines when embedding it in JSON:
 
 ```bash
 # Human insulin: two protein chains
-curl -s -X POST https://api.japanfold.com/v1/predictions \
+curl -s -X POST https://fold-api.aiand.com/v1/predictions \
   -H 'Content-Type: application/json' \
   -d '{
     "model":"boltz2","name":"human-insulin",
@@ -37,7 +37,7 @@ curl -s -X POST https://api.japanfold.com/v1/predictions \
 Each target is `{ "content": "<FASTA or YAML>", "name": "<optional>" }`.
 
 ```bash
-curl -s -X POST https://api.japanfold.com/v1/predictions \
+curl -s -X POST https://fold-api.aiand.com/v1/predictions \
   -H 'Content-Type: application/json' \
   -d '{
     "model":"esmfold2-fast",
@@ -61,7 +61,7 @@ Add a `ligand` chain (SMILES or CCD code) and a `properties: affinity` block
 naming the binder chain:
 
 ```bash
-curl -s -X POST https://api.japanfold.com/v1/predictions \
+curl -s -X POST https://fold-api.aiand.com/v1/predictions \
   -H 'Content-Type: application/json' \
   -d '{
     "model":"boltz2","name":"prot-ligand",
@@ -80,7 +80,7 @@ their allowed range. Defaults, ranges and per-model applicability are on
 [Models & limits](models-and-limits.md#prediction-parameters).
 
 ```bash
-curl -s -X POST https://api.japanfold.com/v1/predictions \
+curl -s -X POST https://fold-api.aiand.com/v1/predictions \
   -H 'Content-Type: application/json' \
   -d '{
     "model":"boltz2","sequence":"MKTAYIAK...",
@@ -101,7 +101,7 @@ call for short jobs. Bare `wait` holds 25s; `wait=N` holds up to N seconds,
 capped at 60:
 
 ```bash
-curl -s -H 'Prefer: wait=60' https://api.japanfold.com/v1/jobs/$JOB
+curl -s -H 'Prefer: wait=60' https://fold-api.aiand.com/v1/jobs/$JOB
 ```
 
 ## Retrying safely: `Idempotency-Key`
@@ -110,7 +110,7 @@ Send an `Idempotency-Key: <unique>` header on a create. A retried submit with th
 same key and caller returns the original job instead of launching a duplicate:
 
 ```bash
-curl -s -X POST https://api.japanfold.com/v1/predictions \
+curl -s -X POST https://fold-api.aiand.com/v1/predictions \
   -H 'Content-Type: application/json' -H 'Idempotency-Key: run-42' \
   -d '{"model":"boltz2","sequence":"MKTAYIAK..."}'
 ```

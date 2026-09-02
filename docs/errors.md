@@ -4,7 +4,7 @@ Errors come back as RFC 9457 problem+json:
 
 ```json
 {
-  "type":   "https://japanfold.com/errors/invalid-input",
+  "type":   "https://japanfold.aiand.com/errors/invalid-input",
   "title":  "Invalid request",
   "status": 400,
   "detail": "unknown model 'nope' — choose one of ['boltz2', 'esmfold2', 'esmfold2-fast', 'openbind', 'opendde', 'opendde-abag', 'openfold3', 'protenix-v2'].",
@@ -38,7 +38,7 @@ off if it repeats.
 
 ```bash
 resp=$(curl -s -D /tmp/h -o /tmp/b -w '%{http_code}' -X POST \
-  https://api.japanfold.com/v1/predictions -H 'Content-Type: application/json' \
+  https://fold-api.aiand.com/v1/predictions -H 'Content-Type: application/json' \
   -d '{"model":"boltz2","sequence":"MKTAYIAK..."}')
 if [ "$resp" = "429" ]; then
   sleep "$(grep -i '^retry-after:' /tmp/h | tr -dc 0-9)"
@@ -54,7 +54,7 @@ moment, so submitting again immediately cannot succeed:
 
 ```json
 {
-  "type":   "https://japanfold.com/errors/unavailable",
+  "type":   "https://japanfold.aiand.com/errors/unavailable",
   "title":  "Service Unavailable",
   "status": 503,
   "detail": "JapanFold's accelerators are offline for maintenance right now, so no jobs can start. Please try again in a few minutes.",
@@ -74,5 +74,5 @@ a browser-like `User-Agent`:
 
 ```bash
 curl -s -A 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36' \
-  https://api.japanfold.com/v1/models
+  https://fold-api.aiand.com/v1/models
 ```

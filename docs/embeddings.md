@@ -26,7 +26,7 @@ Provide exactly one of these, as on [Predictions](predictions.md).
 ### 1. `sequence`: a single chain
 
 ```bash
-curl -s -X POST https://api.japanfold.com/v1/embeddings \
+curl -s -X POST https://fold-api.aiand.com/v1/embeddings \
   -H 'Content-Type: application/json' \
   -d '{"model":"esmc-600m","sequence":"MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQ"}'
 ```
@@ -36,7 +36,7 @@ curl -s -X POST https://api.japanfold.com/v1/embeddings \
 Each item is a bare string or an object `{"sequence": "...", "id": "..."}`:
 
 ```bash
-curl -s -X POST https://api.japanfold.com/v1/embeddings \
+curl -s -X POST https://fold-api.aiand.com/v1/embeddings \
   -H 'Content-Type: application/json' \
   -d '{
     "model":"esmc-600m",
@@ -50,7 +50,7 @@ curl -s -X POST https://api.japanfold.com/v1/embeddings \
 ### 3. `input`: one FASTA string
 
 ```bash
-curl -s -X POST https://api.japanfold.com/v1/embeddings \
+curl -s -X POST https://fold-api.aiand.com/v1/embeddings \
   -H 'Content-Type: application/json' \
   -d '{"model":"esmc-600m","input":">a\nMKTAYIAKQRQISFVKSHFSRQLEE\n>b\nGIVEQCCTSICSLYQLENYCN"}'
 ```
@@ -75,7 +75,7 @@ Pass a `params` object.
 | `fast` | bool | `false` | Higher throughput, may be slightly less precise. |
 
 ```bash
-curl -s -X POST https://api.japanfold.com/v1/embeddings \
+curl -s -X POST https://fold-api.aiand.com/v1/embeddings \
   -H 'Content-Type: application/json' \
   -d '{"model":"esmc-600m","sequence":"MKTAYIAK...","params":{"pool":"mean","format":"npz"}}'
 ```
@@ -100,7 +100,7 @@ Download individual files from their artifact `url`, or the whole set from
 ```python
 import io, time, httpx, numpy as np
 
-BASE = "https://api.japanfold.com"
+BASE = "https://fold-api.aiand.com"
 job = httpx.post(f"{BASE}/v1/embeddings",
                  json={"model": "esmc-600m",
                        "sequence": "MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQ"}).json()

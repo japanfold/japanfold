@@ -13,14 +13,14 @@ GPU, nothing to install.
 </p>
 
 <div class="jf-pills">
-  <div class="jf-endpoint"><span class="jf-key">Base URL</span> https://api.japanfold.com</div>
-  <div class="jf-endpoint"><span class="jf-key">Contract</span> <a href="https://api.japanfold.com/v1/openapi.json">/v1/openapi.json</a> <span class="jf-key">OpenAPI 3.1, the source of truth</span></div>
+  <div class="jf-endpoint"><span class="jf-key">Base URL</span> https://fold-api.aiand.com</div>
+  <div class="jf-endpoint"><span class="jf-key">Contract</span> <a href="https://fold-api.aiand.com/v1/openapi.json">/v1/openapi.json</a> <span class="jf-key">OpenAPI 3.1, the source of truth</span></div>
 </div>
 
 <div class="jf-cta" markdown>
 [Fold your first protein](#fold-your-first-protein-in-3-calls){ .md-button .md-button--primary }
 [API reference](api.html){ .md-button }
-[Try it in the browser](https://demo.japanfold.com){ .md-button }
+[Try it in the browser](https://workbench.aiand.com){ .md-button }
 </div>
 </div>
 
@@ -44,7 +44,7 @@ Statuses: `queued` → `running` → `succeeded` | `failed` | `canceled`.
 ## Fold your first protein in 3 calls
 
 ```bash
-BASE=https://api.japanfold.com
+BASE=https://fold-api.aiand.com
 
 # 1. submit: a bare `sequence` is the simplest input
 JOB=$(curl -s -X POST $BASE/v1/predictions \
@@ -112,7 +112,7 @@ parameter choice are all variations on these three calls.
 ## Network egress
 
 If your environment sandboxes outbound HTTP, allow the host
-`api.japanfold.com`. A `403` citing Cloudflare error `1010` is edge bot-filtering
+`fold-api.aiand.com`. A `403` citing Cloudflare error `1010` is edge bot-filtering
 of your HTTP client, not an API error: retry with a browser-like `User-Agent`.
 
 <div class="jf-credits">
