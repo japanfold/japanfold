@@ -94,7 +94,7 @@ of downloadable artifacts:
 curl -s https://api.japanfold.aiand.com/v1/jobs/$JOB/results
 ```
 
-Ask earlier and you get `{"object":"results","job_id":"...","ready":false,"status":"running"}`,
+Ask earlier and you get `{"job_id":"...","object":"results","ready":false,"status":"queued"}`,
 so `ready` is safe to poll on directly.
 
 A **prediction** result, from the 33-residue Boltz-2 fold in the

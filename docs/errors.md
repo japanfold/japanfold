@@ -69,8 +69,10 @@ earlier stays available.
 
 Three responses come from the framework rather than the API, so they are not
 problem+json: a `413`, a `405` from the wrong HTTP method (both HTML), and a
-`404` on a path that does not exist (`{"error":"not found"}`). Every error from
-an endpoint that exists is problem+json.
+`404` on a path that does not exist (`{"error":"not found"}`). A `GET` on
+`/v1/predictions`, `/v1/designs` or `/v1/embeddings` gets that same `404`, so
+check the method before you conclude the path is wrong. Everything else is
+problem+json.
 
 ## Large bodies
 
