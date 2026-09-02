@@ -21,8 +21,10 @@ curl -s https://api.japanfold.aiand.com/v1/models
 | `protenix-v2` | default | ✓ | ✓ | - | - | - | 980 |
 | `openfold3` | default | - | ✓ | - | - | - | 576 |
 | `openbind` | default | ✓ | ✓ | - | - | - | 576 |
+| `rf3` | default | ✓ | ✓ | - | - | - | 627 |
 | `opendde` | default | - | - | - | - | - | 544 |
 | `opendde-abag` | default | - | - | - | - | - | 544 |
+| `nesso1` | never | ✓ | - | ✓ | - | - | 1024 |
 
 MSA `default` means on unless you send `use_msa_server: false`; `never` means the
 model is always single-sequence.
@@ -37,11 +39,23 @@ complexes; its published weights are a preview checkpoint trained well short of
 the full AlphaFold3 schedule, so read the confidence scores before trusting a
 prediction. **OpenBind-0** is the same OpenFold3 stack on the consortium's
 OpenBind checkpoint, which co-folds small-molecule ligands the preview weights
-refuse. The two **OpenDDE** checkpoints are
+refuse. **RoseTTAFold3** is the Baker lab's AlphaFold3-family folder, taking
+proteins, RNA, DNA and small-molecule ligands. It reads covalent modifications,
+bond constraints and cyclic chains only from its own JSON spec, which this API does
+not expose, so an input carrying any of those is refused rather than folded without
+them. The two **OpenDDE** checkpoints are
 protein-only: `opendde` for general complexes, `opendde-abag` to co-fold an
 antibody Fab heavy/light with its antigen. Both match the reference OpenDDE
 implementation, including its own weakness on some hard antibody-antigen targets,
 so don't expect uniform accuracy on every input. See [Accuracy](accuracy.md).
+
+**Nesso-1** is the one model here that returns no structure. It reads binding
+affinity off a soft distogram instead of docking the ligand, which makes it cheap
+enough to rank a series: send a protein, a ligand and a
+`properties.affinity.binder`, and the results carry the affinity scalars and a CSV
+where the others carry coordinates. It is the same `POST /v1/predictions` job, and a
+submission without a ligand and a binder is refused. Use Boltz-2 when you want the
+bound pose as well.
 
 Boltz-2 and both ESMFold-2 variants also accept modified residues.
 
@@ -126,7 +140,7 @@ capped. The full platform has no such limits.
 
 | Limit | Value | |
 |---|--:|---|
-| `max_residues` | 1024 | per structure; per model: protenix-v2 980, openfold3 576, openbind 576, opendde 544, opendde-abag 544 |
+| `max_residues` | 1024 | per structure; per model: protenix-v2 980, rf3 627, openfold3 576, openbind 576, opendde 544, opendde-abag 544 |
 | `max_chains_per_complex` | 10 | |
 | `max_ligands_per_complex` | 10 | |
 | `max_constraints_per_complex` | 20 | |
