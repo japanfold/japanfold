@@ -8,7 +8,7 @@ async flow: submit, poll, download. Parameter detail lives on the endpoint pages
 ## Fold a protein
 
 ```bash
-BASE=https://fold-api.aiand.com
+BASE=https://api.japanfold.aiand.com
 
 JOB=$(curl -s -X POST $BASE/v1/predictions \
   -H 'Content-Type: application/json' \
@@ -28,7 +28,7 @@ The same thing in Python, stdlib only:
 ```python
 import json, time, urllib.request
 
-BASE = "https://fold-api.aiand.com"
+BASE = "https://api.japanfold.aiand.com"
 # The edge blocks urllib's default User-Agent as a bot, so send a browser-like one.
 HEADERS = {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"}
 
@@ -69,7 +69,7 @@ Only Boltz-2 does affinity. Pass the complex as a Boltz YAML `input` with a
 ```python
 import time, httpx
 
-BASE = "https://fold-api.aiand.com"
+BASE = "https://api.japanfold.aiand.com"
 YAML = (
     "sequences:\n"
     "  - protein: {id: A, sequence: MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQ}\n"
@@ -99,7 +99,7 @@ scores.
 ```python
 import time, httpx
 
-BASE = "https://fold-api.aiand.com"
+BASE = "https://api.japanfold.aiand.com"
 
 with httpx.Client(base_url=BASE, timeout=300) as c:
     job = c.post("/v1/designs", json={
@@ -123,7 +123,7 @@ stays fixed and what gets designed. Results are unranked mmCIFs.
 ```python
 import time, httpx
 
-BASE = "https://fold-api.aiand.com"
+BASE = "https://api.japanfold.aiand.com"
 structure = open("target.pdb").read()  # chain A holds the target
 
 with httpx.Client(base_url=BASE, timeout=300) as c:

@@ -34,7 +34,7 @@ Restart Claude Code, then just ask it to fold or design.
 
 Manage skills in-app, no installer. **Customize → Skills**, add from the
 [repo](https://github.com/japanfold/japanfold) (or paste `SKILL.md`), and
-**publish**. If egress is sandboxed, approve the host `fold-api.aiand.com`.
+**publish**. If egress is sandboxed, approve the host `api.japanfold.aiand.com`.
 
 ## Use
 
@@ -51,5 +51,5 @@ Once installed, ask in plain language:
 Or invoke it explicitly where supported: `/japanfold`.
 
 The API is public and self-describing, so you can also skip the skill entirely
-and just tell your agent: *"use the JapanFold API at `fold-api.aiand.com` to
+and just tell your agent: *"use the JapanFold API at `api.japanfold.aiand.com` to
 fold …"*.

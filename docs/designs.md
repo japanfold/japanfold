@@ -15,7 +15,7 @@ but it must match the protocol's model; a mismatch is a 400.
 ## BoltzGen: binders against a sequence or ligand
 
 ```bash
-curl -s -X POST https://fold-api.aiand.com/v1/designs \
+curl -s -X POST https://api.japanfold.aiand.com/v1/designs \
   -H 'Content-Type: application/json' \
   -d '{
     "protocol":"nanobody-anything",
@@ -50,7 +50,7 @@ RFdiffusion3 diffuses protein structure and sequence together, conditioned on a
 target structure you provide:
 
 ```bash
-curl -s -X POST https://fold-api.aiand.com/v1/designs \
+curl -s -X POST https://api.japanfold.aiand.com/v1/designs \
   -H 'Content-Type: application/json' \
   -d '{
     "protocol":"rfd3-binder",
@@ -90,7 +90,7 @@ backbones through a sequence-design tool before ordering anything. For a ranked,
 sequenced binder use BoltzGen.
 
 ```bash
-curl -s -X POST https://fold-api.aiand.com/v1/designs \
+curl -s -X POST https://api.japanfold.aiand.com/v1/designs \
   -H 'Content-Type: application/json' \
   -d '{
     "protocol":"pxdesign-binder",

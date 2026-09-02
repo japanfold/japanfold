@@ -2,11 +2,11 @@
 
 The API is public and keyless. Every endpoint works with no credentials, so just
 send the request. This is the same access the web app at
-[workbench.aiand.com](https://workbench.aiand.com) uses, with the same limits.
+[workbench.japanfold.aiand.com](https://workbench.japanfold.aiand.com) uses, with the same limits.
 
 ```bash
 # No auth needed:
-curl -s https://fold-api.aiand.com/v1/models
+curl -s https://api.japanfold.aiand.com/v1/models
 ```
 
 ## Optional API key: ownership
@@ -15,7 +15,7 @@ Send a key of the form `jf_live_…` as `Authorization: Bearer` or `X-API-Key`
 to own your jobs under the key instead of your IP/session:
 
 ```bash
-curl -s https://fold-api.aiand.com/v1/predictions \
+curl -s https://api.japanfold.aiand.com/v1/predictions \
   -H 'Authorization: Bearer jf_live_your_key_here' \
   -H 'Content-Type: application/json' \
   -d '{"model":"boltz2","sequence":"MKTAYIAK..."}'

@@ -38,7 +38,7 @@ The plugin tracks this repo, so `marketplace update` pulls new versions.
 **Claude Science** manages skills in-app (no installer): **Customize → Skills**,
 add from this repo (or paste `SKILL.md`) and **publish** it. Or skip install
 entirely: the API is public and self-describing, so just ask:
-*"use the JapanFold API at `fold-api.aiand.com` to fold …"*.
+*"use the JapanFold API at `api.japanfold.aiand.com` to fold …"*.
 
 ## Use
 
@@ -51,6 +51,6 @@ Or invoke it explicitly where supported: `/japanfold`.
 
 ## The API
 
-`https://fold-api.aiand.com`: public, keyless, async (submit → poll → download).
-Full contract at [`/v1/openapi.json`](https://fold-api.aiand.com/v1/openapi.json).
+`https://api.japanfold.aiand.com`: public, keyless, async (submit → poll → download).
+Full contract at [`/v1/openapi.json`](https://api.japanfold.aiand.com/v1/openapi.json).
 See [`SKILL.md`](SKILL.md) for endpoints, examples, and limits.

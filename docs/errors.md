@@ -38,7 +38,7 @@ off if it repeats.
 
 ```bash
 resp=$(curl -s -D /tmp/h -o /tmp/b -w '%{http_code}' -X POST \
-  https://fold-api.aiand.com/v1/predictions -H 'Content-Type: application/json' \
+  https://api.japanfold.aiand.com/v1/predictions -H 'Content-Type: application/json' \
   -d '{"model":"boltz2","sequence":"MKTAYIAK..."}')
 if [ "$resp" = "429" ]; then
   sleep "$(grep -i '^retry-after:' /tmp/h | tr -dc 0-9)"
@@ -74,5 +74,5 @@ a browser-like `User-Agent`:
 
 ```bash
 curl -s -A 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36' \
-  https://fold-api.aiand.com/v1/models
+  https://api.japanfold.aiand.com/v1/models
 ```

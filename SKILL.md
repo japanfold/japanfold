@@ -38,19 +38,19 @@ JapanFold runs Boltz-2 / ESMFold2 / Protenix / OpenFold3 / OpenBind-0 / OpenDDE
 ESMC / SaProt (embeddings) on
 Tenstorrent hardware behind a **free public HTTP API**. You
 call it as an async job — **submit → poll → download** — over plain HTTPS against
-`https://fold-api.aiand.com`. No API key, no model to install, no local GPU.
+`https://api.japanfold.aiand.com`. No API key, no model to install, no local GPU.
 
 Works from any agent/harness: use `curl` (Bash) or your language's HTTP client
 (`httpx`/`requests`, `fetch`, `net/http`, …) — whatever your environment has.
 If your environment sandboxes network egress (e.g. Claude Science), approve the
-host **`fold-api.aiand.com`** when prompted.
+host **`api.japanfold.aiand.com`** when prompted.
 
 ## Predict a structure
 
 Submit → poll until `status` is terminal → read results:
 
 ```bash
-BASE=https://fold-api.aiand.com
+BASE=https://api.japanfold.aiand.com
 # 1. submit — input is a bare `sequence`, one `input` FASTA/YAML string, or a `targets` list
 JOB=$(curl -s -X POST $BASE/v1/predictions -H 'Content-Type: application/json' \
   -d '{"model":"boltz2","name":"mytarget","sequence":"MKTAYIAKQRQISFVKSHFSRQLEE"}' \
@@ -87,7 +87,7 @@ Python-kernel equivalent (Claude Science, notebooks):
 
 ```python
 import time, httpx
-BASE = "https://fold-api.aiand.com"
+BASE = "https://api.japanfold.aiand.com"
 job = httpx.post(f"{BASE}/v1/predictions",
                  json={"model": "boltz2", "sequence": "MKT..."}).json()
 while job["status"] not in ("succeeded", "failed", "canceled"):

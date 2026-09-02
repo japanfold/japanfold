@@ -31,7 +31,7 @@ reach jobs you own (see [Authentication](authentication.md)).
 ## Poll one job
 
 ```bash
-curl -s https://fold-api.aiand.com/v1/jobs/$JOB
+curl -s https://api.japanfold.aiand.com/v1/jobs/$JOB
 ```
 
 Add `Prefer: wait=<seconds>` to block until the job finishes instead of returning
@@ -39,13 +39,13 @@ immediately (see
 [Predictions](predictions.md#waiting-inline-the-prefer-wait-header)):
 
 ```bash
-curl -s -H 'Prefer: wait=60' https://fold-api.aiand.com/v1/jobs/$JOB
+curl -s -H 'Prefer: wait=60' https://api.japanfold.aiand.com/v1/jobs/$JOB
 ```
 
 A simple poll loop:
 
 ```bash
-until curl -s https://fold-api.aiand.com/v1/jobs/$JOB \
+until curl -s https://api.japanfold.aiand.com/v1/jobs/$JOB \
   | grep -qE '"status":"(succeeded|failed|canceled)"'; do sleep 5; done
 ```
 
@@ -54,7 +54,7 @@ until curl -s https://fold-api.aiand.com/v1/jobs/$JOB \
 Paginated (cursor-based). `limit` defaults to 20 (max 100).
 
 ```bash
-curl -s "https://fold-api.aiand.com/v1/jobs?limit=20"
+curl -s "https://api.japanfold.aiand.com/v1/jobs?limit=20"
 ```
 
 ```json
@@ -67,8 +67,8 @@ Pass `next_cursor` back as `?cursor=...` to fetch the next page.
 ## Cancel, delete
 
 ```bash
-curl -s -X POST   https://fold-api.aiand.com/v1/jobs/$JOB/cancel   # stop a queued/running job
-curl -s -X DELETE https://fold-api.aiand.com/v1/jobs/$JOB          # delete the job and its data
+curl -s -X POST   https://api.japanfold.aiand.com/v1/jobs/$JOB/cancel   # stop a queued/running job
+curl -s -X DELETE https://api.japanfold.aiand.com/v1/jobs/$JOB          # delete the job and its data
 ```
 
 ## Results
@@ -77,7 +77,7 @@ Once `results_ready` (or `status` is `succeeded`), read the scores and the list
 of downloadable artifacts:
 
 ```bash
-curl -s https://fold-api.aiand.com/v1/jobs/$JOB/results
+curl -s https://api.japanfold.aiand.com/v1/jobs/$JOB/results
 ```
 
 Ask earlier and you get `{"object":"results","job_id":"...","ready":false,"status":"running"}`,
@@ -112,20 +112,20 @@ A **prediction** result:
   and unranked for RFdiffusion3 and PXDesign. An **embed** result carries `sequences`; see
   [Embeddings → Results](embeddings.md#results).
 - `artifacts[].url` and `archive_url` are paths under the base URL. Prefix them
-  with `https://fold-api.aiand.com`.
+  with `https://api.japanfold.aiand.com`.
 
 ## Download artifacts
 
 One file:
 
 ```bash
-curl -s https://fold-api.aiand.com/v1/jobs/$JOB/artifacts/target_1.cif -o target_1.cif
+curl -s https://api.japanfold.aiand.com/v1/jobs/$JOB/artifacts/target_1.cif -o target_1.cif
 ```
 
 Everything as a zip:
 
 ```bash
-curl -s https://fold-api.aiand.com/v1/jobs/$JOB/archive -o results.zip
+curl -s https://api.japanfold.aiand.com/v1/jobs/$JOB/archive -o results.zip
 unzip -oq results.zip -d results
 ```
 
@@ -134,5 +134,5 @@ unzip -oq results.zip -d results
 Plain-text run log, useful while a job runs or to debug a failure:
 
 ```bash
-curl -s https://fold-api.aiand.com/v1/jobs/$JOB/logs
+curl -s https://api.japanfold.aiand.com/v1/jobs/$JOB/logs
 ```

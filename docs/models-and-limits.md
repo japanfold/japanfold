@@ -6,7 +6,7 @@ current limits. The tables below mirror it. If they ever disagree, trust the
 endpoint.
 
 ```bash
-curl -s https://fold-api.aiand.com/v1/models
+curl -s https://api.japanfold.aiand.com/v1/models
 ```
 
 `GET /v1/health` is a plain liveness check (`{"status":"ok","service":"japanfold","api_version":"1.0.0"}`).
