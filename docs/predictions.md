@@ -92,7 +92,7 @@ their allowed range. Defaults, ranges and per-model applicability are on
 curl -s -X POST https://api.japanfold.aiand.com/v1/predictions \
   -H 'Content-Type: application/json' \
   -d '{
-    "model":"boltz2","sequence":"MKTAYIAK...",
+    "model":"boltz2","sequence":"MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQ",
     "params":{"use_msa_server":true,"diffusion_samples":3,"output_format":"pdb"}
   }'
 ```
@@ -121,7 +121,7 @@ same key and caller returns the original job instead of launching a duplicate:
 ```bash
 curl -s -X POST https://api.japanfold.aiand.com/v1/predictions \
   -H 'Content-Type: application/json' -H 'Idempotency-Key: run-42' \
-  -d '{"model":"boltz2","sequence":"MKTAYIAK..."}'
+  -d '{"model":"boltz2","sequence":"MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQ"}'
 ```
 
 ## Response

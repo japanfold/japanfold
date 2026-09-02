@@ -5,7 +5,7 @@
 
 <p class="jf-lede">
 Fold proteins, co-fold complexes with ligands (and get binding affinity),
-design de-novo binders, and compute protein embeddings, over a <strong>free,
+design de novo binders, and compute protein embeddings, over a <strong>free,
 public, keyless HTTP API</strong>. Boltz-2, ESMFold-2, Protenix-v2, OpenFold3,
 OpenBind-0, RoseTTAFold3 and OpenDDE for structure prediction, BoltzGen, RFdiffusion3 and
 PXDesign for binder design, ESMC and SaProt for embeddings. No API key, no local
@@ -38,8 +38,8 @@ GET  /v1/jobs/{id}/archive                          →  everything as one .zip
 
 Statuses: `queued` → `running` → `succeeded` | `failed` | `canceled`.
 
-> Server artifacts are retained only temporarily. Download what you need and save
-> it locally.
+> The service keeps the 1000 most recent jobs and has no expiry timer. Download
+> what you want to keep; see [Retention](jobs.md#retention).
 
 ## Fold your first protein in 3 calls
 

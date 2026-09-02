@@ -1,16 +1,16 @@
 # Designs
 
-`POST /v1/designs` designs de-novo proteins against a target. Three engines share
-the endpoint: [BoltzGen](https://github.com/jwohlwend/boltz) takes a sequence or
+`POST /v1/designs` designs de novo proteins against a target. Three engines share
+the endpoint: [BoltzGen](https://github.com/HannesStark/boltzgen) takes a sequence or
 ligand target and returns designs **ranked** by predicted confidence;
 RFdiffusion3 takes a pasted **structure** plus a contig and returns them
 **unranked**; PXDesign takes a pasted **structure** plus the target chains and
 returns binder backbones with no sequence at all. All three return a job to
 poll, exactly like a [prediction](predictions.md).
 
-The protocol implies the model. You may pass `model` explicitly
-(`boltzgen`, `rfd3` or `pxdesign` — the same vocabulary as the CLI's `--model`),
-but it must match the protocol's model; a mismatch is a 400.
+The protocol implies the model. You may pass `model` explicitly (`boltzgen`,
+`rfd3` or `pxdesign`), but it has to match the protocol's model; a mismatch is a
+`400`.
 
 ## BoltzGen: binders against a sequence or ligand
 
@@ -34,7 +34,7 @@ curl -s -X POST https://api.japanfold.aiand.com/v1/designs \
 
 | `protocol` | Designs |
 |---|---|
-| `protein-anything` | De-novo mini-protein binder against any target. |
+| `protein-anything` | De novo mini-protein binder against any target. |
 | `peptide-anything` | Short peptide binder. |
 | `nanobody-anything` | Single-domain antibody / nanobody (VHH). |
 | `antibody-anything` | Antibody binder. |
@@ -55,7 +55,7 @@ curl -s -X POST https://api.japanfold.aiand.com/v1/designs \
   -d '{
     "protocol":"rfd3-binder",
     "name":"my-rfd3-binders",
-    "structure":"HEADER ...\nATOM      1  N   ALA A   1      ...\n...",
+    "structure":"<the contents of your PDB or mmCIF file>",
     "contig":"A1-150,60-80",
     "params":{"num_designs":4,"num_timesteps":100}
   }'
@@ -94,7 +94,7 @@ curl -s -X POST https://api.japanfold.aiand.com/v1/designs \
   -H 'Content-Type: application/json' \
   -d '{
     "protocol":"pxdesign-binder",
-    "structure":"<PDB or mmCIF text>",
+    "structure":"<the contents of your PDB or mmCIF file>",
     "chains":"A",
     "binder_length":80,
     "hotspots":"A74,A75,A76",

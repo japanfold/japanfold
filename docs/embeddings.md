@@ -1,7 +1,8 @@
 # Embeddings
 
 `POST /v1/embeddings` turns protein sequences into protein language-model
-embeddings (ESMC or SaProt): numeric vectors you can feed to a classifier,
+embeddings (ESMC from Biohub, SaProt from Westlake University): numeric vectors
+you can feed to a classifier,
 clustering, similarity search or any downstream model. It returns a job to poll
 (see [Jobs](jobs.md)). No structure prediction, no MSA.
 
@@ -77,7 +78,7 @@ Pass a `params` object.
 ```bash
 curl -s -X POST https://api.japanfold.aiand.com/v1/embeddings \
   -H 'Content-Type: application/json' \
-  -d '{"model":"esmc-600m","sequence":"MKTAYIAK...","params":{"pool":"mean","format":"npz"}}'
+  -d '{"model":"esmc-600m","sequence":"MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQ","params":{"pool":"mean","format":"npz"}}'
 ```
 
 ## Results

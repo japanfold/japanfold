@@ -17,7 +17,7 @@ JOB=$(curl -s -X POST $BASE/v1/predictions \
 
 # poll (Prefer: wait blocks up to 60s per call)
 until curl -s -H 'Prefer: wait=60' $BASE/v1/jobs/$JOB \
-  | grep -qE '"status":"(succeeded|failed|canceled)"'; do :; done
+  | grep -qE '"status":"(succeeded|failed|canceled)"'; do sleep 2; done
 
 curl -s $BASE/v1/jobs/$JOB/results
 curl -s $BASE/v1/jobs/$JOB/archive -o myprotein.zip && unzip -oq myprotein.zip -d myprotein
@@ -53,7 +53,9 @@ assert job["status"] == "succeeded", job.get("error")
 
 results = api("GET", f"/v1/jobs/{job['id']}/results")
 for row in results["rows"]:
-    print(row["id"], "plddt=", row.get("plddt"), "ptm=", row.get("ptm"))
+    # Boltz-2 reports confidence_score and complex_plddt; ESMFold-2 reports plddt.
+    print(row["id"], "confidence=", row.get("confidence_score"),
+          "plddt=", row.get("complex_plddt") or row.get("plddt"))
 
 # urlretrieve takes no headers, so open the archive directly
 req = urllib.request.Request(BASE + results["archive_url"], headers=HEADERS)
@@ -88,8 +90,9 @@ with httpx.Client(base_url=BASE, timeout=180) as c:
     print(c.get(f"/v1/jobs/{job['id']}/results").json()["rows"])
 ```
 
-The result `rows` carry affinity fields alongside the structure and confidence
-scores.
+The result row carries `affinity_pred_value`, predicted log10(IC50) in μM where
+lower binds harder, and `affinity_probability_binary`, P(binder) from 0 to 1.
+See [Predictions](predictions.md#co-folding-with-a-ligand-affinity-boltz-2).
 
 ## Design binders (BoltzGen)
 
