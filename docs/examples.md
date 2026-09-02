@@ -1,9 +1,8 @@
 # Examples
 
-One worked example per capability, in curl and Python. All of them are the same
-async flow: submit, poll, download. Parameter detail lives on the endpoint pages
-([Predictions](predictions.md), [Designs](designs.md),
-[Embeddings](embeddings.md)).
+One worked example per capability, in curl and Python. Parameter detail lives on
+the endpoint pages: [Predictions](predictions.md), [Designs](designs.md),
+[Embeddings](embeddings.md).
 
 ## Fold a protein
 

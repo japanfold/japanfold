@@ -60,8 +60,8 @@ curl -s $BASE/v1/jobs/$JOB/results
 curl -s $BASE/v1/jobs/$JOB/archive -o myprotein.zip && unzip -oq myprotein.zip -d myprotein
 ```
 
-That's the whole workflow. Complexes, ligands, affinity, binder design and
-parameter choice are all variations on these three calls.
+Complexes, ligands, affinity, binder design and parameter choice are all
+variations on these three calls.
 
 ## Where to go next
 

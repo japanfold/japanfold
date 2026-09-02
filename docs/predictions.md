@@ -126,7 +126,6 @@ curl -s -X POST https://api.japanfold.aiand.com/v1/predictions \
 
 ## Response
 
-The body is a **Job**: `id`, `status`, `kind: "predict"`, `model`, timestamps and
-a `links` map. Poll `links.self` (or `/v1/jobs/{id}`) and read
-`/v1/jobs/{id}/results` once `results_ready` is true. [Jobs](jobs.md) has the
-full lifecycle and result shape.
+The body is a **Job**. Poll `links.self` (or `/v1/jobs/{id}`) and read
+`/v1/jobs/{id}/results` once `results_ready` is true.
+[Jobs](jobs.md) has the object, the lifecycle and the result shape.

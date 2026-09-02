@@ -1,10 +1,10 @@
 # Embeddings
 
 `POST /v1/embeddings` turns protein sequences into protein language-model
-embeddings (ESMC from Biohub, SaProt from Westlake University): numeric vectors
-you can feed to a classifier,
-clustering, similarity search or any downstream model. It returns a job to poll
-(see [Jobs](jobs.md)). No structure prediction, no MSA.
+embeddings, from ESMC (Biohub) or SaProt (Westlake University): numeric vectors
+you can feed to a classifier, a clustering run, similarity search or any
+downstream model. It returns a job to poll (see [Jobs](jobs.md)). No structure
+prediction, no MSA.
 
 ## Two kinds of vector
 
@@ -17,8 +17,8 @@ For every sequence you get both:
   For one vector per protein: similarity, clustering, a sequence-level
   classifier.
 
-`d_model` depends on the model (960 for `esmc-300m`) and is reported in the
-results.
+`d_model` depends on the model (960 for `esmc-300m`, 1152 for `esmc-600m`) and is
+reported in the results.
 
 ## Input
 

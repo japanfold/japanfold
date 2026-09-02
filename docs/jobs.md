@@ -127,11 +127,11 @@ A **prediction** result, from the 33-residue Boltz-2 fold in the
 
 - `rows`: one row per target. `confidence_score` is the headline number, a
   weighted blend of the others. The rest are the AlphaFold-family metrics:
-  `plddt` is predicted local accuracy per residue, `ptm` the predicted TM-score
-  for the whole structure, `iptm` the same restricted to a chain-chain
-  interface, and `pde` / `ipde` the predicted distance error. All are 0-1;
-  higher is better except the error terms. Which fields are present depends on
-  the model:
+  plDDT (`plddt`, `complex_plddt`) is predicted local accuracy per residue, pTM
+  (`ptm`) the predicted TM-score for the whole structure, ipTM (`iptm`) the same
+  restricted to a chain-chain interface, and PDE (`complex_pde`,
+  `complex_ipde`) the predicted distance error. All are 0-1, higher is better
+  except the error terms. Which fields are present depends on the model:
   the block above is Boltz-2's, an ESMFold-2 row instead carries `plddt` (mean,
   0-1), `ptm`, `n_residues`, `n_chains`, `samples` and `msa`, and a Boltz-2
   affinity run adds the affinity fields ([Predictions →
