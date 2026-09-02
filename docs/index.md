@@ -93,7 +93,7 @@ parameter choice are all variations on these three calls.
 
 -   :material-target:{ .lg .middle } **[Accuracy](accuracy.md)**
 
-    Output parity against each model's reference GPU implementation.
+    Output parity against each model's reference implementation.
 
 -   :material-alert-circle-outline:{ .lg .middle } **[Errors](errors.md)**
 
