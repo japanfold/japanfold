@@ -74,12 +74,16 @@ Sent as `params` on `POST /v1/predictions`. Out-of-range values are clamped.
 
 | Key | Type | Default | Range | Notes |
 |---|---|---|---|---|
-| `use_msa_server` | bool | `true` | - | Build an MSA. Boltz-2 cannot fold single-sequence, so `false` is forced back to `true` for it. Every other model honours it. |
-| `fast` | bool | `true` | - | Higher throughput, may be slightly less accurate. Ignored for OpenFold3, OpenBind-0 and RoseTTAFold3, which have no fast path. |
-| `recycling_steps` | int | model default | 1–10 | Trunk recycles. Omit it: Boltz-2 uses 3, the others 10. |
+| `use_msa_server` | bool | `true` | - | Build an MSA. Boltz-2 cannot fold single-sequence, so `false` is forced back to `true` for it. `esmfold2-fast` has no MSA encoder, so it ignores the flag and always folds single-sequence. Every other model honours it. |
+| `fast` | bool | `true` | - | Higher throughput, may be slightly less accurate. Ignored for OpenFold3, OpenBind-0 and RoseTTAFold3, which have no fast path. ESMFold-2 runs fast-only here, so `false` is forced back to `true` for both `esmfold2` and `esmfold2-fast`. |
+| `recycling_steps` | int | model default | 1–10 | Trunk recycles. Omit it: Boltz-2, OpenFold3 and OpenBind-0 use 3, the other six use 10. |
 | `sampling_steps` | int | model default | 10–500 | Diffusion steps. Omit it: ESMFold-2 uses 100, RoseTTAFold3 50, the others 200. |
 | `diffusion_samples` | int | `1` | 1–5 | Structures generated per target. |
 | `output_format` | enum | `cif` | `cif`, `pdb` | Structure file format. |
+
+OpenFold3 and OpenBind-0 fix their recycle count, and RoseTTAFold3 its
+sampling steps, when the model loads rather than per request, so a value you
+send for those three may not be the one that runs. Omit them there.
 
 ## Design protocols and parameters
 

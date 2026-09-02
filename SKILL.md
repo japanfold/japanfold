@@ -122,11 +122,16 @@ res = httpx.get(f"{BASE}/v1/jobs/{job['id']}/results").json()
 - For complexes, protein-ligand affinity or multiple chains, pass a **Boltz YAML**
   string as `input` (`sequences:` with `protein`/`dna`/`rna`/`ligand` chains;
   `properties:` for the affinity head).
-- `params`: `use_msa_server` (on by default, and forced on for Boltz-2, which
-  cannot fold single-sequence), `fast` (ignored by `openfold3`, `openbind` and
-  `rf3`, which have no fast path), `recycling_steps` (default 3 for Boltz-2, 10
-  elsewhere), `sampling_steps` (default 100 for ESMFold-2, 50 for RoseTTAFold3,
-  200 elsewhere), `diffusion_samples`, `output_format` (`cif` or `pdb`).
+- `params`: `use_msa_server` (on by default; forced on for Boltz-2, which cannot
+  fold single-sequence, and ignored by `esmfold2-fast`, which has no MSA
+  encoder), `fast` (ignored by `openfold3`, `openbind` and `rf3`, which have no
+  fast path; forced on for `esmfold2` and `esmfold2-fast`, which run fast-only
+  here), `recycling_steps` (default 3 for Boltz-2, `openfold3` and `openbind`,
+  10 elsewhere), `sampling_steps` (default 100 for ESMFold-2, 50 for
+  RoseTTAFold3, 200 elsewhere), `diffusion_samples`, `output_format` (`cif` or
+  `pdb`). `openfold3` and `openbind` set the recycle count, and `rf3` its
+  sampling steps, when the model loads rather than per request, so omit those
+  two knobs for those three models.
 - `GET /v1/models` lists every model, protocol, parameter, and the current limits.
 
 ## Design binders (BoltzGen)
