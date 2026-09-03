@@ -28,6 +28,11 @@ jobs:
           python-version: "3.x"
       - run: pip install -r requirements-docs.txt
       - run: mkdocs build --strict
+      # Which commit these pages were built from. The docs, the landing and the API
+      # deploy in three unrelated ways and none of them follows a merge, so asking "is
+      # this page current?" used to mean rebuilding the site locally and diffing.
+      # japanfold/platform's deploy/drift.py reads this and the two sibling markers.
+      - run: echo "${{ github.sha }}" > site/commit.txt
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
