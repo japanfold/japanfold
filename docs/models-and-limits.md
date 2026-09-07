@@ -145,7 +145,7 @@ capped. The full platform has no such limits.
 
 | Limit | Value | |
 |---|--:|---|
-| `max_residues` | 1024 | per structure; per model: protenix-v2 980, rf3 627, openfold3 576, openbind 576, opendde 544, opendde-abag 544 |
+| `max_residues` | 1024 | per structure; per model: protenix-v2 640 (hard refusal, not a soft cap), rf3 627, openfold3 576, openbind 576, opendde 544, opendde-abag 544 |
 | `max_chains_per_complex` | 10 | |
 | `max_ligands_per_complex` | 10 | |
 | `max_constraints_per_complex` | 20 | |
@@ -190,7 +190,7 @@ download budget you get `429` with `Retry-After`. See [Errors](errors.md).
 Every row above bounds one field. None of them bounds their product, and a
 submission is a product. So the service also prices each submission in **units**,
 where 1.0 unit is one full-size run of the model you chose at that model's own
-default settings: 1024 residues on Boltz-2 or ESMFold-2, 980 on Protenix-v2, 627
+default settings: 1024 residues on Boltz-2 or ESMFold-2, 640 on Protenix-v2, 627
 on RoseTTAFold3, 576 on OpenFold3 and OpenBind-0, 544 on OpenDDE.
 
 - Cost grows with the **square** of the residue count, because a structure

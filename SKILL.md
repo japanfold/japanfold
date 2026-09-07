@@ -107,7 +107,8 @@ res = httpx.get(f"{BASE}/v1/jobs/{job['id']}/results").json()
   `boltz2` 1024 (default; MSA, ligands, affinity, constraints; from MIT and
   Recursion), `esmfold2` 1024 and `esmfold2-fast` 1024 (Biohub; the fast
   checkpoint is always single-sequence and the quickest way to screen many
-  sequences), `protenix-v2` 980 (ByteDance), `openfold3` 576 (the OpenFold
+  sequences), `protenix-v2` 640 (ByteDance; 672-1088 hangs the device on current
+  hardware, so this is a real refusal, not a soft cap), `openfold3` 576 (the OpenFold
   Consortium's AlphaFold3 reproduction on preview weights; protein, RNA and DNA,
   no ligands, no affinity), `openbind` 576 (the same stack on the consortium's
   OpenBind-0 checkpoint, which does co-fold ligands), `rf3` 627 (RoseTTAFold3,
