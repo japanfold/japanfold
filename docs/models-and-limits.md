@@ -13,17 +13,22 @@ curl -s https://api.japanfold.aiand.com/v1/models
 
 ## Prediction models
 
-| `id` | MSA | Ligands | DNA/RNA | Affinity | Constr | PDE | Max residues |
+| `id` | MSA | Ligands | DNA/RNA | Affinity | Constr | PDE | Measured wall |
 |---|---|:-:|:-:|:-:|:-:|:-:|--:|
 | `boltz2` | always | ✓ | ✓ | ✓ | ✓ | ✓ | 1024 |
 | `esmfold2` | default | - | - | - | - | - | 1024 |
 | `esmfold2-fast` | never | - | - | - | - | - | 1024 |
-| `protenix-v2` | default | ✓ | ✓ | - | - | - | 980 |
-| `openfold3` | default | - | ✓ | - | - | - | 576 |
-| `openbind` | default | ✓ | ✓ | - | - | - | 576 |
-| `rf3` | default | ✓ | ✓ | - | - | - | 627 |
+| `protenix-v2` | default | ✓ | ✓ | - | - | - | 1024 |
+| `openfold3` | default | - | ✓ | - | - | - | 1024 |
+| `openbind` | default | ✓ | ✓ | - | - | - | 960 |
+| `rf3` | default | ✓ | ✓ | - | - | - | 1024 |
 | `opendde` | default | - | - | - | - | - | 544 |
 | `opendde-abag` | default | - | - | - | - | - | 544 |
+
+Every model accepts up to 1024 residues per structure. The last column is
+`measured_wall`, the largest structure that model has actually folded on this
+hardware, which `GET /v1/models` publishes alongside `max_residues`. A submission
+between the two is accepted and can still fail on device.
 
 MSA `default` means on unless you send `use_msa_server: false`. `always` means
 Boltz-2 cannot fold single-sequence, so a `false` is forced back to `true`.
@@ -145,7 +150,7 @@ capped. The full platform has no such limits.
 
 | Limit | Value | |
 |---|--:|---|
-| `max_residues` | 1024 | per structure; per model: protenix-v2 640 (hard refusal, not a soft cap), rf3 627, openfold3 576, openbind 576, opendde 544, opendde-abag 544 |
+| `max_residues` | 1024 | per structure, every model; the measured wall per model is in the table above |
 | `max_chains_per_complex` | 10 | |
 | `max_ligands_per_complex` | 10 | |
 | `max_constraints_per_complex` | 20 | |
@@ -190,8 +195,7 @@ download budget you get `429` with `Retry-After`. See [Errors](errors.md).
 Every row above bounds one field. None of them bounds their product, and a
 submission is a product. So the service also prices each submission in **units**,
 where 1.0 unit is one full-size run of the model you chose at that model's own
-default settings: 1024 residues on Boltz-2 or ESMFold-2, 640 on Protenix-v2, 627
-on RoseTTAFold3, 576 on OpenFold3 and OpenBind-0, 544 on OpenDDE.
+default settings, which is 1024 residues on every prediction model.
 
 - Cost grows with the **square** of the residue count, because a structure
   model's dominant cost is pair work. Half a model's ceiling is a quarter of a
