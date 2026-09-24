@@ -2,20 +2,19 @@
 name: japanfold
 description: >-
   Predict 3D biomolecular structures and binding affinity (Boltz-2, ESMFold-2,
-  Protenix-v2, OpenFold3, OpenBind-0, RoseTTAFold3, OpenDDE) and design de novo
-  binders/proteins (BoltzGen, RFdiffusion3, PXDesign) via JapanFold, a free,
-  public, Tenstorrent-accelerated HTTP
-  API. Use to fold a protein or complex, co-fold a protein with a ligand and
-  get affinity, fold an antibody-antigen complex, design
-  nanobody/antibody/peptide/miniprotein binders against a target, scaffold a
-  functional motif or design a binder against a pasted PDB/mmCIF structure,
-  turn a sequence into a PDB/mmCIF structure, or compute ESMC/SaProt protein
-  embeddings (per-residue + pooled vectors). No API key or local GPU needed.
+  Protenix-v2, OpenFold3, OpenBind-0, RoseTTAFold3, OpenDDE), design de-novo
+  binders/proteins (BoltzGen, RFdiffusion3, PXDesign),
+  scaffold a functional motif around a pasted structure, and compute ESMC or
+  SaProt protein-language-model embeddings via JapanFold, a hosted,
+  Tenstorrent-accelerated HTTP API in Japan with a free daily allowance. Use to fold a protein or complex, co-fold a
+  protein with a ligand and get affinity, design nanobody/antibody/peptide/
+  miniprotein binders against a target, turn a sequence into a PDB/mmCIF
+  structure, or get a fixed-size embedding vector for search/clustering/ML
+  features. No API key needed to start, no local GPU.
 when_to_use: >-
   When the user wants to fold/predict a protein or complex structure, estimate
-  protein-ligand binding affinity, design binders against a target, or compute
-  protein language-model embeddings, and a hosted service is fine (no local
-  model to run).
+  protein–ligand binding affinity, design binders against a target, or compute
+  protein embeddings — and a hosted service is fine (no local model to run).
 license: Apache-2.0
 category: biomodels
 metadata:
@@ -23,7 +22,7 @@ metadata:
     - kind: service
       name: JapanFold API
       provider: JapanFold
-      info_url: https://japanfold.aiand.com
+      info_url: https://japanfold.com
 # allowed-tools is a Claude Code convenience (grants curl/python without a
 # prompt); other harnesses ignore it and use their own execution/permission model.
 allowed-tools:
@@ -31,59 +30,59 @@ allowed-tools:
   - Bash(python3 *)
 ---
 
-# JapanFold: hosted structure prediction and binder design
+# JapanFold — hosted structure prediction & binder design
 
-JapanFold runs Boltz-2, ESMFold-2, Protenix-v2, OpenFold3, OpenBind-0,
-RoseTTAFold3 and OpenDDE (structure and affinity), BoltzGen, RFdiffusion3 and
-PXDesign (binder design), and ESMC and SaProt (embeddings) on Tenstorrent
-hardware behind a **free public HTTP API**. You call it as an async job,
-**submit → poll → download**, over plain HTTPS against
-`https://api.japanfold.aiand.com`. No API key, no model to install, no local GPU.
+JapanFold runs Boltz-2 / ESMFold-2 / Protenix-v2 / OpenFold3 / OpenBind-0 / RoseTTAFold3 /
+OpenDDE (structure prediction; Boltz-2 also does affinity, OpenBind-0 and RoseTTAFold3
+co-fold ligands, OpenDDE is protein-complex / antibody-antigen docking), BoltzGen / RFdiffusion3 /
+PXDesign (binder design), and ESMC / SaProt (protein-language-model embeddings) on Tenstorrent
+hardware behind an HTTP API hosted in Japan. You call it as an async job
+(**submit → poll → download**) over plain HTTPS against
+`https://api.japanfold.com`. No model to install, no local GPU, and no key
+needed to start: keyless calls spend a small free grant that renews daily.
 
-Works from any agent or harness: use `curl` (Bash) or your language's HTTP client
-(`httpx`, `requests`, `fetch`, `net/http`), whatever your environment has.
+**Credits and keys.** Work is priced in credits for the chip time it uses. If the
+user has an account, they create a key at `japanfold.com/account/keys` and
+set `JAPANFOLD_API_KEY` (and `JAPANFOLD_BASE_URL` if they were given another
+endpoint). The examples below send the key on every call when it is set, which
+matters: a job belongs to the key that submitted it, so polling it without the
+key returns `404`.
+
+Works from any agent/harness: use `curl` (Bash) or your language's HTTP client
+(`httpx`/`requests`, `fetch`, `net/http`, …) — whatever your environment has.
 If your environment sandboxes network egress (e.g. Claude Science), approve the
-host **`api.japanfold.aiand.com`** when prompted.
+host **`api.japanfold.com`** when prompted.
 
 ## Predict a structure
 
-Submit, poll until `status` is terminal, then read results:
+Submit → poll until `status` is terminal → read results:
 
 ```bash
-BASE=https://api.japanfold.aiand.com
-# 1. submit. Input is a bare `sequence`, one `input` FASTA/YAML string, or a `targets` list
-JOB=$(curl -s -X POST $BASE/v1/predictions -H 'Content-Type: application/json' \
+BASE=${JAPANFOLD_BASE_URL:-https://api.japanfold.com}
+H=(-H 'X-JapanFold-Client: skill')
+[ -n "$JAPANFOLD_API_KEY" ] && H+=(-H "Authorization: Bearer $JAPANFOLD_API_KEY")
+# 1. submit — input is a bare `sequence`, one `input` FASTA/YAML string, or a `targets` list
+JOB=$(curl -s "${H[@]}" -X POST $BASE/v1/predictions -H 'Content-Type: application/json' \
   -d '{"model":"boltz2","name":"mytarget","sequence":"MKTAYIAKQRQISFVKSHFSRQLEE"}' \
-  | python3 -c 'import sys,json;print(json.load(sys.stdin)["id"])')
+  | python3 -c 'import sys,json; r=json.load(sys.stdin); print(r["id"]) if "id" in r else sys.exit(r["detail"])')
 
-# 2. poll (a small fold is usually done in well under a minute). Tip: add header
-#    `Prefer: wait=60` to the GET to block until the job finishes (up to 60s).
-curl -s $BASE/v1/jobs/$JOB          # -> {"status":"queued|running|succeeded|failed", ...}
+# 2. poll. The first job on a processor also loads the model's weights. Tip: add
+#    header `Prefer: wait=60` to the GET to block until the job finishes (up to 60s).
+#    When the service is busy the job carries `queue`: its `reason`, how many
+#    `accounts_ahead` and the fleet's chip counts. That is a real wait, not a
+#    stall, so keep polling. It has no time estimate, so do not invent one.
+curl -s "${H[@]}" $BASE/v1/jobs/$JOB          # -> {"status":"queued|running|succeeded|failed", ...}
 
-# 3. once status=succeeded: scores + artifact URLs, then download into a clear output dir
-OUT="./japanfold-mytarget"; mkdir -p "$OUT"        # a path you can name back to the user
-curl -s "$BASE/v1/jobs/$JOB/results" -o "$OUT/results.json"
-curl -s "$BASE/v1/jobs/$JOB/archive" -o "$OUT/output.zip" && unzip -oq "$OUT/output.zip" -d "$OUT"
-# -> then TELL the user the absolute path to $OUT and to each structure file.
+# 3. once status=succeeded: scores + artifact URLs, then download the bundle
+curl -s "${H[@]}" $BASE/v1/jobs/$JOB/results
+curl -sOJ "${H[@]}" $BASE/v1/jobs/$JOB/archive          # zip: structures + results.json
 ```
 
-**Always save results to a clear directory and tell the user exactly where.** The
-service keeps only the 1000 most recent jobs, so download them, put structures
-and `results.json` in a named folder (e.g. `./japanfold-<name>/`), and report the
-**absolute path(s)** to the user along with the key scores. Never leave output
-only on the server or in an unstated temp dir.
-
-A job that sits at `queued` with `waiting_for_device: true` and a `queue` object
-is waiting for a free processor, not stuck. There is no position or ETA, because
-the scheduler is fair rather than first-in-first-out and a fold may still have to
-load its model's weights, which makes the first call to a given model slower than
-the next. Keep polling.
-
-**Multi-chain complexes** (e.g. insulin's A+B chains) go in the `input` YAML,
+**Multi-chain complexes** (e.g. insulin's A+B chains) go in the `input` YAML —
 one `protein` entry per chain, not the bare `sequence` field:
 
 ```bash
-curl -s -X POST $BASE/v1/predictions -H 'Content-Type: application/json' -d '{
+curl -s "${H[@]}" -X POST $BASE/v1/predictions -H 'Content-Type: application/json' -d '{
   "model":"boltz2","name":"human-insulin",
   "input":"sequences:\n  - protein: {id: A, sequence: GIVEQCCTSICSLYQLENYCN}\n  - protein: {id: B, sequence: FVNQHLCGSHLVEALYLVCGERGFFYTPKT}\n"
 }'
@@ -92,161 +91,191 @@ curl -s -X POST $BASE/v1/predictions -H 'Content-Type: application/json' -d '{
 Python-kernel equivalent (Claude Science, notebooks):
 
 ```python
-import time, httpx
-BASE = "https://api.japanfold.aiand.com"
-job = httpx.post(f"{BASE}/v1/predictions",
-                 json={"model": "boltz2",
-                       "sequence": "MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQ"}).json()
+import os, time, httpx
+BASE = os.environ.get("JAPANFOLD_BASE_URL", "https://api.japanfold.com")
+key = os.environ.get("JAPANFOLD_API_KEY")
+jf = httpx.Client(base_url=BASE, headers={"X-JapanFold-Client": "skill",
+                  **({"Authorization": f"Bearer {key}"} if key else {})})
+job = jf.post("/v1/predictions", json={"model": "boltz2", "sequence": "MKT..."}).json()
 while job["status"] not in ("succeeded", "failed", "canceled"):
     time.sleep(5)
-    job = httpx.get(f"{BASE}/v1/jobs/{job['id']}").json()
-res = httpx.get(f"{BASE}/v1/jobs/{job['id']}/results").json()
+    job = jf.get(f"/v1/jobs/{job['id']}").json()
+res = jf.get(f"/v1/jobs/{job['id']}/results").json()
 ```
 
-- **Models**, with the residue ceiling each one enforces per structure:
-  `boltz2` 1024 (default; MSA, ligands, affinity, constraints; from MIT and
-  Recursion), `esmfold2` 1024 and `esmfold2-fast` 1024 (Biohub; the fast
-  checkpoint is always single-sequence and the quickest way to screen many
-  sequences), `protenix-v2` 640 (ByteDance; 672-1088 hangs the device on current
-  hardware, so this is a real refusal, not a soft cap), `openfold3` 576 (the OpenFold
-  Consortium's AlphaFold3 reproduction on preview weights; protein, RNA and DNA,
-  no ligands, no affinity), `openbind` 576 (the same stack on the consortium's
-  OpenBind-0 checkpoint, which does co-fold ligands), `rf3` 627 (RoseTTAFold3,
-  from the Institute for Protein Design; co-folds ligands), and the OpenDDE
-  family from Aureka, `opendde` 544 (general protein complexes) and
-  `opendde-abag` 544 (antibody-antigen), both protein-only with MSA on by
-  default and no affinity. Over a model's ceiling the API refuses at submit and
-  names the models that do take the size. `opendde-abag`'s accuracy matches the
-  reference OpenDDE implementation: strong on standard antibody-antigen
-  complexes, weaker on some hard targets, which is a checkpoint characteristic
-  and not a port defect.
-- For complexes, protein-ligand affinity or multiple chains, pass a **Boltz YAML**
+- **Models:** `boltz2` (default; MSA + ligands + affinity), `esmfold2`,
+  `esmfold2-fast` (single-sequence, fastest) — both co-fold ligands and
+  nucleic acids, neither predicts affinity — `protenix-v2`, `openfold3` (the
+  OpenFold Consortium's AlphaFold3 reproduction, preview weights; protein / RNA /
+  DNA, no ligands or affinity), `openbind` (the same stack on the OpenBind-0
+  checkpoint, which does co-fold ligands),
+  `rf3` (RoseTTAFold3 — proteins, RNA/DNA and ligands, no covalent modifications or
+  binding constraints from this input format), and the OpenDDE family — `opendde`
+  (general protein-complex checkpoint) and `opendde-abag` (antibody-antigen
+  checkpoint), both protein-only with MSA on by default, no affinity.
+  `opendde-abag`'s accuracy is verified to match the reference OpenDDE
+  implementation: strong on standard antibody-antigen complexes, and it shares
+  the reference's own limitation on some hard targets (a checkpoint
+  characteristic, not a port defect). For binding affinity use `boltz2`. For
+  ligands, `boltz2`, `protenix-v2`, `openbind`, `rf3` or the `esmfold2` pair;
+  add `openfold3` for DNA/RNA without ligands.
+- For complexes / protein–ligand affinity / multiple chains, pass a **Boltz YAML**
   string as `input` (`sequences:` with `protein`/`dna`/`rna`/`ligand` chains;
   `properties:` for the affinity head).
-- `params`: `use_msa_server` (on by default; forced on for Boltz-2, which cannot
-  fold single-sequence, and ignored by `esmfold2-fast`, which has no MSA
-  encoder), `fast` (ignored by `openfold3`, `openbind` and `rf3`, which have no
-  fast path; forced on for `esmfold2` and `esmfold2-fast`, which run fast-only
-  here), `recycling_steps` (default 3 for Boltz-2, `openfold3` and `openbind`,
-  10 elsewhere), `sampling_steps` (default 100 for ESMFold-2, 50 for
-  RoseTTAFold3, 200 elsewhere), `diffusion_samples`, `output_format` (`cif` or
-  `pdb`). `openfold3` and `openbind` set the recycle count, and `rf3` its
-  sampling steps, when the model loads rather than per request, so omit those
-  two knobs for those three models.
+- `params`: `use_msa_server` (on by default for Boltz-2), `fast`, `recycling_steps`,
+  `sampling_steps`, `diffusion_samples`, `output_format`, `seed` (default 0, echoed on the
+  job), `write_pae` (models with the `pae` cap: returns `<name>_pae.npz`, the matrix
+  Adaptyv's ipSAE pipeline reads). Not every model takes every one:
+  a param the model cannot honour comes back as a 400 naming both, so read `caps` in
+  `GET /v1/models` (no `fast` on OpenFold3, OpenBind-0 or RoseTTAFold3; no `use_msa_server`
+  on ESMFold-2 Fast, which has no MSA encoder). Leave `recycling_steps` and `sampling_steps`
+  out unless you mean to override a model's own value.
+- **Fast mode is off by default.** Send `"fast": true` for higher throughput; it may be
+  slightly less accurate. The workbench turns it on for humans, the API never does it for
+  you. ESMFold-2 is the exception: it always runs fast here and its job says so.
 - `GET /v1/models` lists every model, protocol, parameter, and the current limits.
 
-## Design binders (BoltzGen)
+## Design binders (BoltzGen, RFdiffusion3 or PXDesign)
+
+Three design models, and you pick one. They take different inputs, so the choice
+comes first — `GET /v1/models` returns `design_models`, each model's `params`, and
+each protocol's `engine`.
+
+**BoltzGen** — a target described in a YAML spec, out comes a ranked, filtered
+top set with confidence metrics. Protocols: `protein-anything`,
+`peptide-anything`, `nanobody-anything`, `antibody-anything`,
+`protein-small_molecule`, `protein-redesign`.
 
 ```bash
-curl -s -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
-  -d '{"protocol":"nanobody-anything","spec":"<YAML design spec>","params":{"num_designs":10}}'
+curl -s "${H[@]}" -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
+  -d '{"model":"boltzgen","protocol":"nanobody-anything","spec":"<YAML design spec>",
+       "params":{"num_designs":10}}'
 ```
 
-Protocols: `protein-anything`, `peptide-anything`, `nanobody-anything`,
-`antibody-anything`, `protein-small_molecule`, `protein-redesign`. Poll the same
-way; `/v1/jobs/{id}/results` returns the ranked designs. BoltzGen is from MIT.
-The target can be a protein, a small molecule, DNA or RNA, up to 1024 residues.
-
-The protocol implies the design model. An explicit `model` of `boltzgen`, `rfd3`
-or `pxdesign` is accepted but has to match it.
-
-## Design against a structure (RFdiffusion3)
-
-Same endpoint, but the input is a pasted **structure** plus a **contig** (what
-stays fixed against what gets designed). RFdiffusion3 is from the Institute for
-Protein Design:
+**RFdiffusion3** — all-atom diffusion directly around a target structure you
+paste in, with a contig saying what stays fixed and what gets designed. Protocols:
+`rfd3-binder`, `rfd3-scaffold`, `rfd3-na-binder`. Params: `num_designs`,
+`num_timesteps`, `seed`.
 
 ```bash
-curl -s -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
-  -d '{"protocol":"rfd3-binder","structure":"<the contents of your PDB or mmCIF file>","contig":"A1-150,60-80","params":{"num_designs":4,"num_timesteps":100}}'
+curl -s "${H[@]}" -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
+  -d '{"model":"rfd3","protocol":"rfd3-binder","structure":"<PDB or mmCIF text>",
+       "contig":"A1-150,60-80","params":{"num_designs":4}}'
 ```
 
-- Contig grammar: `A1-150` keeps target chain A residues 1-150 fixed; a bare
-  number designs that many new residues. `"A1-150,60-80"` keeps the 150-residue
-  target and designs a 60 to 80 residue binder.
-- Protocols: `rfd3-binder` (protein target), `rfd3-scaffold` (build around a
-  fixed motif), `rfd3-na-binder` (DNA/RNA target).
-- Caps: 5 designs, 200 timesteps, structure 700k chars, and 490 residues for the
-  contig's motif plus designed regions. The contig, not the paste, sets the run
-  size, so a large structure is fine if the contig selects less of it.
-- Results are **unranked** mmCIFs, with no refold or filter scores. To
-  sanity-check a design, refold its sequence against the target with
-  `POST /v1/predictions` and read `iptm`.
+**PXDesign** — binder backbones against a target structure, conditioned on a
+distogram of the chains you name. Fastest of the three. Protocol:
+`pxdesign-binder`. Params: `num_designs`, `n_step`, `seed`.
 
-## Design backbones against a structure (PXDesign)
-
-Same endpoint again. PXDesign, from ByteDance, conditions on a distogram of the
-target chains you name and returns binder backbones: coordinates only, no
-sequence, no ranking, no confidence. It is the fastest of the three; run the
-backbones through a sequence-design tool before ordering anything.
+**It returns a backbone with no sequence** — coordinates only, no ranking, no
+confidence score. Every binder residue is written as GLY with just N/CA/C/O,
+because that is what the model generates. Take the coordinates to a
+sequence-design tool before ordering anything; for a ranked, sequenced binder use
+BoltzGen. Each design carries a `fit_rmsd`, the residual of fitting the model's
+own reconstruction of the target onto the real target — the number that says
+whether the conditioning worked.
 
 ```bash
-curl -s -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
-  -d '{"protocol":"pxdesign-binder","structure":"<the contents of your PDB or mmCIF file>","chains":"A","binder_length":80,"hotspots":"A74,A75,A76","params":{"num_designs":4,"n_step":200}}'
+curl -s "${H[@]}" -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
+  -d '{"model":"pxdesign","protocol":"pxdesign-binder","structure":"<PDB or mmCIF text>",
+       "chains":"A","binder_length":80,"hotspots":"A64,A65,A66",
+       "params":{"num_designs":4}}'
 ```
 
-- `chains` names the target chains to condition on; `binder_length` is the
-  binder's residue count (8 to 200); `hotspots` is optional, target residues to
-  aim at.
-- One protocol: `pxdesign-binder`. The named chains plus the binder have to come
-  to 768 residues or fewer; chains you don't name aren't counted.
-- Caps: 8 designs, 400 steps.
+`model` is optional but must match the protocol's engine, else `400`. Poll the
+same way; `/v1/jobs/{id}/results` returns the designs.
 
-## Embed sequences (ESMC / SaProt)
+## Compute protein embeddings (ESMC, SaProt)
 
-Turn protein sequences into language-model vectors, with no structure and no MSA.
-Same submit, poll, download flow:
+Submit → poll → download, same as predict/design:
 
 ```bash
-curl -s -X POST $BASE/v1/embeddings -H 'Content-Type: application/json' \
-  -d '{"model":"esmc-600m","sequence":"MKTAYIAKQRQISFVKSHFSRQLEE"}'
-# or many at once: "sequences":[{"id":"a","sequence":"..."},{"id":"b","sequence":"..."}]
+JOB=$(curl -s "${H[@]}" -X POST $BASE/v1/embeddings -H 'Content-Type: application/json' \
+  -d '{"model":"esmc-600m","sequence":"MKTAYIAKQRQISFVKSHFSRQLEE"}' \
+  | python3 -c 'import sys,json; r=json.load(sys.stdin); print(r["id"]) if "id" in r else sys.exit(r["detail"])')
+
+curl -s "${H[@]}" $BASE/v1/jobs/$JOB               # poll until status is terminal
+curl -s "${H[@]}" $BASE/v1/jobs/$JOB/results       # -> sequences: [{id, length, file}, ...]
+curl -sOJ "${H[@]}" $BASE/v1/jobs/$JOB/archive     # zip: manifest.json + embeddings
 ```
 
-- **Models:** `esmc-300m`, `esmc-600m` (default) and `esmc-6b` from Biohub,
-  `saprot-650m` and `saprot-1.3b` from Westlake University. Larger is a stronger
-  representation at more compute. SaProt is structure-aware but runs
-  sequence-only here, which the 1.3B variant is trained for.
-- `params`: `pool` (`mean`/`max`/`cls`, default `mean`), `format` (`npz` = per-residue
-  `[L, d_model]` + pooled `[d_model]` per sequence; `parquet` = pooled table only), `fast`.
-- Caps: 50 sequences per submission, 2000 residues per sequence, 1968 for
-  `esmc-6b`.
-- `d_model` is 960 / 1152 / 2560 for ESMC 300M / 600M / 6B and 1280 for both
-  SaProt sizes (1.3B is deeper than 650M, not wider).
-- Results carry `kind: "embed"`, `d_model`, a `sequences` list and `artifacts` URLs.
-  Download the `.npz`/`.parquet` files into a named dir and tell the user the path.
+Multiple sequences go in `sequences` (a list) or `input` (a FASTA/YAML blob —
+same flexibility as predict's `input`):
+
+```bash
+curl -s "${H[@]}" -X POST $BASE/v1/embeddings -H 'Content-Type: application/json' -d '{
+  "model":"esmc-600m",
+  "sequences":[{"id":"gfp","sequence":"MSKGEELFTGVVPILVELDGDVNGHKFSVSGEGEGDAT"},
+               {"id":"lysozyme","sequence":"KVFGRCELAAAMKRHGLDNYRGYSLGNWVCAAKFESNF"}]
+}'
+```
+
+- **Models:** `esmc-300m`, `esmc-600m` (default), `esmc-6b` — larger trunks give
+  a stronger representation at higher compute cost per sequence — plus
+  `saprot-650m` and `saprot-1.3b`, trained on a joint sequence + structure
+  vocabulary and run sequence-only here. SaProt is a different representation
+  from ESMC, often stronger for stability and function prediction.
+- `params`: `pool` (`mean` default, `max`, `cls` — how per-residue vectors combine
+  into one fixed-size vector), `format` (`npz` default: per-residue + pooled, one
+  file per sequence; `parquet`: pooled vectors only, one table), `fast`.
+- Results: `manifest.json` (model/pool/shapes/dtype) plus one `<id>.npz` per
+  sequence (or one shared `embeddings.parquet`). No structure, no MSA — just the
+  language-model trunk, so these are the cheapest jobs.
+- `GET /v1/models` lists the embedding models and params too.
 
 ## Reading results
 
 `GET /v1/jobs/{id}/results` gives `ready`, an `artifacts` list (each with a `url`),
-and for a prediction per-target `rows`; for a design, the `designs`. A Boltz-2
-row leads with `confidence_score` and carries `complex_plddt`, `ptm`, `iptm`,
-`complex_pde` and, on an affinity run, `affinity_pred_value` (predicted
-log10(IC50) in μM, so lower binds harder) and `affinity_probability_binary`
-(P(binder), 0 to 1). An ESMFold-2 row is shorter: `plddt`, `ptm`, `n_residues`,
-`n_chains`. Pass lines mirror Boltz-2: fold `complex_plddt` > 0.7, interface
-`iptm` > 0.5. ipTM scores an interface, so a single-chain fold reports `0.0`
-rather than omitting it. Download a single structure from its artifact `url`, or
-the whole bundle from `…/archive`, into a named local directory, and tell the
-user the absolute path where you saved it.
+and — for a prediction — per-target `rows` (`confidence_score`, `complex_plddt`,
+`iptm`, affinity fields); for a design, the ranked `designs`. Pass lines mirror
+Boltz-2: interface `iptm` > 0.5, fold `complex_plddt` > 0.7. Download a single
+structure from its artifact `url`, or the whole bundle from `…/archive`.
 
-## Limits and notes
+## Limits & notes
 
-- Free public demo caps, the same as the web app: **10 chains and ligands per
-  complex, 10 structures per run, 10 designs per BoltzGen request, 5 for
-  RFdiffusion3, 8 for PXDesign**, plus the per-model residue ceilings above.
-  Over a cap you get `400`. Numeric params are clamped to range.
-- Concurrency: **3 active jobs and 12 submits per minute per caller**. Past
-  either you get `429` with a `Retry-After` header; honour it and retry rather
-  than resubmitting immediately.
-- Errors are RFC 9457 problem+json (`title`, `detail`), except for a `413` (body
-  over 8 MiB), a `405` from the wrong HTTP method and a `404` on a path that does
-  not exist.
-- No key needed. An optional `Authorization: Bearer <key>` moves job ownership
-  off your IP address and unlocks `GET /v1/jobs`, the one endpoint that will not
-  answer keyless. It raises no limit.
+- Free public demo caps (same as the web app): **each model's residue ceiling
+  per structure, ≤ 10 chains & ligands/complex, ≤ 10 structures/run, ≤ 10
+  designs/request**, plus per-IP rate limits. A model's residue ceiling is the
+  largest size the engine is measured to fold on this hardware: 1920 for
+  Boltz-2, 1792 for Protenix-v2, 1664 for ESMFold-2, 1664 for ESMFold-2 Fast,
+  1664 for OpenFold3, 1664 for OpenBind-0, 1600 for RoseTTAFold3, and 1024 for
+  every other folding model (OpenDDE folds larger complexes, but slower than a
+  job may run). Design is bounded the same way: RFdiffusion3's contig
+  (motif + designed regions) caps at 1536 and PXDesign's target chains plus
+  binder at 1536, and `binder_length` is 8-200. `GET /v1/models` publishes each
+  model's `max_residues`. Over a cap → `400` naming the model and its
+  ceiling; at capacity → `429` (respect `Retry-After`). Numeric params are
+  clamped to range.
+- **A model's ceiling is not its track record.** `GET /v1/models` reports both:
+  `max_residues` is what will be accepted, `measured_wall` is the largest
+  structure that model has actually run on this hardware, and it can be much
+  lower (OpenDDE accepts 1024 and finishes 896 inside the time limit). Sizes in between are taken
+  and tried on purpose, because a wall that moves with alignment depth or is not
+  monotonic in residue count cannot honestly be a ceiling. Such a job is
+  accepted with a `warnings` entry saying so, and if it does fail on device it
+  comes back `failed` naming the wall and the models that have run that size —
+  one job, nothing else affected. Read `measured_wall` if you want to pick a
+  model that will finish rather than one that will be accepted.
+- **One more cap bounds the total, not a field.** A submission may cost up to
+  **10x** a 1024-residue run of the model you picked, and one structure up to **4x**,
+  where cost grows with the square of the residue count and linearly with
+  `diffusion_samples`, `recycling_steps` and `sampling_steps`. 10 structures of
+  1024 residues at default settings is exactly 10x; a larger structure costs more
+  (1152 residues is 1.27x), so fewer of them fit in one submission. Several knobs
+  turned up together do not fit either: 10 structures of 1024 residues at
+  `diffusion_samples: 3` is 30x and comes back `400` with type
+  `.../errors/submission-too-large`, naming what to reduce. `GET /v1/models`
+  reports the budget and the pricing under `limits` and `cost`.
+- Downloads are bounded in bytes, not requests: **32 GB/hour per network**, which
+  is dozens of full result archives. Over it, `429` with `Retry-After`. Polling job
+  status is not counted.
+- `Prefer: wait` is a preference, not a guarantee (RFC 7240): under load the
+  request returns the job's current state at once. `Preference-Applied: wait` on
+  the response means the hold happened; if it is absent, poll again.
+- Errors are RFC 9457 problem+json (`title`, `detail`).
+- No key needed; `Authorization: Bearer <key>` spends the user's account credits
+  instead of the free grant. It does not raise any limit.
+- **`402` with `out_of_credit: true`** means the balance is spent. The `detail`
+  says what the run would reserve and when the free grant renews. Tell the user;
+  retrying will not help until they add credit or the grant renews.
 - Full machine-readable contract: `GET /v1/openapi.json`.
-- **If a request ever returns HTTP `403` with Cloudflare error `1010`**, that is
-  edge-level bot filtering of your HTTP client, not an API error. Retry the same
-  request with a browser-like `User-Agent` header
-  (`Mozilla/5.0 … Chrome/124.0 Safari/537.36`).

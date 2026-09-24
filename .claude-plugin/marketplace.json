@@ -2,11 +2,11 @@
   "name": "japanfold",
   "owner": {
     "name": "JapanFold",
-    "url": "https://japanfold.aiand.com"
+    "url": "https://japanfold.com"
   },
   "metadata": {
     "description": "JapanFold: hosted biomolecular structure prediction, binder design and protein embeddings on Tenstorrent.",
-    "version": "0.1.2"
+    "version": "0.2.0"
   },
   "plugins": [
     {

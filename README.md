@@ -2,7 +2,7 @@
 
 Fold proteins, co-fold with ligands (and get binding affinity), design binders
 and compute protein embeddings from your AI agent, via the free public
-[JapanFold](https://japanfold.aiand.com) API. **No API key, no local GPU.** Runs
+[JapanFold](https://japanfold.com) API. **No API key, no local GPU.** Runs
 Boltz-2, ESMFold-2, Protenix-v2, OpenFold3, OpenBind-0, RoseTTAFold3 and OpenDDE
 for structure prediction, BoltzGen, RFdiffusion3 and PXDesign for binder design,
 and ESMC and SaProt for embeddings, all on Tenstorrent.
@@ -40,7 +40,7 @@ The plugin tracks this repo, so `marketplace update` pulls new versions.
 **Claude Science** manages skills in-app (no installer): **Customize → Skills**,
 add from this repo (or paste `SKILL.md`) and **publish** it. Or skip install
 entirely: the API is public and self-describing, so just ask:
-*"use the JapanFold API at `api.japanfold.aiand.com` to fold …"*.
+*"use the JapanFold API at `api.japanfold.com` to fold …"*.
 
 ## Use
 
@@ -53,6 +53,6 @@ Or invoke it explicitly where supported: `/japanfold`.
 
 ## The API
 
-`https://api.japanfold.aiand.com`: public, keyless, async (submit → poll → download).
-Full contract at [`/v1/openapi.json`](https://api.japanfold.aiand.com/v1/openapi.json).
+`https://api.japanfold.com`: public, keyless, async (submit → poll → download).
+Full contract at [`/v1/openapi.json`](https://api.japanfold.com/v1/openapi.json).
 See [`SKILL.md`](SKILL.md) for endpoints, examples, and limits.
