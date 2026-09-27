@@ -2,15 +2,16 @@
 name: japanfold
 description: >-
   Predict 3D biomolecular structures and binding affinity (Boltz-2, ESMFold-2,
-  Protenix-v2, OpenFold3, OpenBind-0, RoseTTAFold3, OpenDDE), design de-novo
+  Protenix-v2, OpenFold3, OpenBind-0, RoseTTAFold3, OpenDDE), score a binder you
+  already designed against its target (AF2-IG), design de-novo
   binders/proteins (BoltzGen, RFdiffusion3, PXDesign),
   scaffold a functional motif around a pasted structure, and compute ESMC or
   SaProt protein-language-model embeddings via JapanFold, a hosted,
-  Tenstorrent-accelerated HTTP API in Japan with a free daily allowance. Use to fold a protein or complex, co-fold a
+  Tenstorrent-accelerated HTTP API in Japan. Use to fold a protein or complex, co-fold a
   protein with a ligand and get affinity, design nanobody/antibody/peptide/
   miniprotein binders against a target, turn a sequence into a PDB/mmCIF
   structure, or get a fixed-size embedding vector for search/clustering/ML
-  features. No API key needed to start, no local GPU.
+  features. Needs a JapanFold API key; no local GPU.
 when_to_use: >-
   When the user wants to fold/predict a protein or complex structure, estimate
   protein–ligand binding affinity, design binders against a target, or compute
@@ -34,19 +35,20 @@ allowed-tools:
 
 JapanFold runs Boltz-2 / ESMFold-2 / Protenix-v2 / OpenFold3 / OpenBind-0 / RoseTTAFold3 /
 OpenDDE (structure prediction; Boltz-2 also does affinity, OpenBind-0 and RoseTTAFold3
-co-fold ligands, OpenDDE is protein-complex / antibody-antigen docking), BoltzGen / RFdiffusion3 /
+co-fold ligands, OpenDDE is protein-complex / antibody-antigen docking), AF2-IG (scores a
+binder you already designed), BoltzGen / RFdiffusion3 /
 PXDesign (binder design), and ESMC / SaProt (protein-language-model embeddings) on Tenstorrent
 hardware behind an HTTP API hosted in Japan. You call it as an async job
 (**submit → poll → download**) over plain HTTPS against
-`https://api.japanfold.com`. No model to install, no local GPU, and no key
-needed to start: keyless calls spend a small free grant that renews daily.
+`https://api.japanfold.com`. No model to install and no local GPU.
 
-**Credits and keys.** Work is priced in credits for the chip time it uses. If the
-user has an account, they create a key at `japanfold.com/account/keys` and
-set `JAPANFOLD_API_KEY` (and `JAPANFOLD_BASE_URL` if they were given another
-endpoint). The examples below send the key on every call when it is set, which
-matters: a job belongs to the key that submitted it, so polling it without the
-key returns `404`.
+**Key.** Every call needs one, read from `JAPANFOLD_API_KEY` (and
+`JAPANFOLD_BASE_URL` if the user was given another endpoint). If it is not set,
+send the user to `https://japanfold.aiand.com/account/token`: they sign in with
+an email address and the page shows a key, and a new account comes with $100.
+Never ask for the key in the chat. The user sets it in their own shell and
+restarts you from there; a key pasted into a chat goes to the model provider.
+Work costs $0.34 per processor hour of chip time, taken from that balance.
 
 Works from any agent/harness: use `curl` (Bash) or your language's HTTP client
 (`httpx`/`requests`, `fetch`, `net/http`, …) — whatever your environment has.
@@ -59,8 +61,7 @@ Submit → poll until `status` is terminal → read results:
 
 ```bash
 BASE=${JAPANFOLD_BASE_URL:-https://api.japanfold.com}
-H=(-H 'X-JapanFold-Client: skill')
-[ -n "$JAPANFOLD_API_KEY" ] && H+=(-H "Authorization: Bearer $JAPANFOLD_API_KEY")
+H=(-H 'X-JapanFold-Client: skill' -H "Authorization: Bearer $JAPANFOLD_API_KEY")
 # 1. submit — input is a bare `sequence`, one `input` FASTA/YAML string, or a `targets` list
 JOB=$(curl -s "${H[@]}" -X POST $BASE/v1/predictions -H 'Content-Type: application/json' \
   -d '{"model":"boltz2","name":"mytarget","sequence":"MKTAYIAKQRQISFVKSHFSRQLEE"}' \
@@ -73,7 +74,9 @@ JOB=$(curl -s "${H[@]}" -X POST $BASE/v1/predictions -H 'Content-Type: applicati
 #    stall, so keep polling. It has no time estimate, so do not invent one.
 curl -s "${H[@]}" $BASE/v1/jobs/$JOB          # -> {"status":"queued|running|succeeded|failed", ...}
 
-# 3. once status=succeeded: scores + artifact URLs, then download the bundle
+# 3. once status=succeeded: scores + artifact URLs, then download the bundle.
+#    A succeeded job that carries `partial` delivered less than it was asked for (a design
+#    shard or a target failed): tell the user `partial.delivered` of `partial.requested`.
 curl -s "${H[@]}" $BASE/v1/jobs/$JOB/results
 curl -sOJ "${H[@]}" $BASE/v1/jobs/$JOB/archive          # zip: structures + results.json
 ```
@@ -93,9 +96,8 @@ Python-kernel equivalent (Claude Science, notebooks):
 ```python
 import os, time, httpx
 BASE = os.environ.get("JAPANFOLD_BASE_URL", "https://api.japanfold.com")
-key = os.environ.get("JAPANFOLD_API_KEY")
 jf = httpx.Client(base_url=BASE, headers={"X-JapanFold-Client": "skill",
-                  **({"Authorization": f"Bearer {key}"} if key else {})})
+                  "Authorization": f"Bearer {os.environ['JAPANFOLD_API_KEY']}"})
 job = jf.post("/v1/predictions", json={"model": "boltz2", "sequence": "MKT..."}).json()
 while job["status"] not in ("succeeded", "failed", "canceled"):
     time.sleep(5)
@@ -119,6 +121,25 @@ res = jf.get(f"/v1/jobs/{job['id']}/results").json()
   characteristic, not a port defect). For binding affinity use `boltz2`. For
   ligands, `boltz2`, `protenix-v2`, `openbind`, `rf3` or the `esmfold2` pair;
   add `openfold3` for DNA/RNA without ligands.
+- **`af2ig` takes a different input from all of the above.** AlphaFold2 initial-guess
+  scores a binder you already designed, so instead of a chain list its target `content` is
+  a structure plus the binder's sequence:
+
+  ```yaml
+  target:
+    structure: |
+      ATOM      1  N   MET A   1      ...      # target chain AND binder backbone
+    chain: A
+  binder:
+    sequence: SPEDEIQALEEKNAQLKQEIAALEEKI
+    chain: B
+  ```
+
+  The binder chain has to be in the structure and the same length as the sequence: AF2-IG
+  re-predicts the complex from those coordinates. The result row carries `plddt`, `ptm`,
+  `iptm`, `pae`, `ipae` and `interface_pae` (Angstrom) — `iptm` and `interface_pae` are what
+  a binder pipeline filters on. No MSA, no sampling, no seed: the same input gives the same
+  answer, so `use_msa_server`, `sampling_steps` and `diffusion_samples` are refused for it.
 - For complexes / protein–ligand affinity / multiple chains, pass a **Boltz YAML**
   string as `input` (`sequences:` with `protein`/`dna`/`rna`/`ligand` chains;
   `properties:` for the affinity head).
@@ -128,7 +149,8 @@ res = jf.get(f"/v1/jobs/{job['id']}/results").json()
   Adaptyv's ipSAE pipeline reads). Not every model takes every one:
   a param the model cannot honour comes back as a 400 naming both, so read `caps` in
   `GET /v1/models` (no `fast` on OpenFold3, OpenBind-0 or RoseTTAFold3; no `use_msa_server`
-  on ESMFold-2 Fast, which has no MSA encoder). Leave `recycling_steps` and `sampling_steps`
+  on ESMFold-2 Fast, which has no MSA encoder; on AF2-IG only `recycling_steps` and
+  `output_format`). Leave `recycling_steps` and `sampling_steps`
   out unless you mean to override a model's own value.
 - **Fast mode is off by default.** Send `"fast": true` for higher throughput; it may be
   slightly less accurate. The workbench turns it on for humans, the API never does it for
@@ -144,7 +166,8 @@ each protocol's `engine`.
 **BoltzGen** — a target described in a YAML spec, out comes a ranked, filtered
 top set with confidence metrics. Protocols: `protein-anything`,
 `peptide-anything`, `nanobody-anything`, `antibody-anything`,
-`protein-small_molecule`, `protein-redesign`.
+`protein-small_molecule`, `protein-redesign`. Params: `num_designs`, `budget`,
+`fast`, `seed` (omit it for a fresh draw; give one to get the same designs back).
 
 ```bash
 curl -s "${H[@]}" -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
@@ -233,49 +256,32 @@ structure from its artifact `url`, or the whole bundle from `…/archive`.
 
 ## Limits & notes
 
-- Free public demo caps (same as the web app): **each model's residue ceiling
-  per structure, ≤ 10 chains & ligands/complex, ≤ 10 structures/run, ≤ 10
-  designs/request**, plus per-IP rate limits. A model's residue ceiling is the
+- The one size limit is **each model's residue ceiling per structure**, the
   largest size the engine is measured to fold on this hardware: 1920 for
-  Boltz-2, 1792 for Protenix-v2, 1664 for ESMFold-2, 1664 for ESMFold-2 Fast,
-  1664 for OpenFold3, 1664 for OpenBind-0, 1600 for RoseTTAFold3, and 1024 for
-  every other folding model (OpenDDE folds larger complexes, but slower than a
-  job may run). Design is bounded the same way: RFdiffusion3's contig
+  Boltz-2, 2048 for Protenix-v2, 1664 for ESMFold-2, 1664 for ESMFold-2 Fast,
+  1664 for OpenFold3, 1664 for OpenBind-0, 1600 for RoseTTAFold3, 1536 for OpenDDE — General
+  and 1536 for OpenDDE — Antibody-Antigen, and 1024 for every other folding model
+  (AF2-IG counts the target plus the binder). Design is bounded the same way: RFdiffusion3's contig
   (motif + designed regions) caps at 1536 and PXDesign's target chains plus
   binder at 1536, and `binder_length` is 8-200. `GET /v1/models` publishes each
   model's `max_residues`. Over a cap → `400` naming the model and its
-  ceiling; at capacity → `429` (respect `Retry-After`). Numeric params are
-  clamped to range.
+  ceiling. Numeric params are clamped to range.
 - **A model's ceiling is not its track record.** `GET /v1/models` reports both:
   `max_residues` is what will be accepted, `measured_wall` is the largest
   structure that model has actually run on this hardware, and it can be much
-  lower (OpenDDE accepts 1024 and finishes 896 inside the time limit). Sizes in between are taken
+  lower (AF2-IG accepts 1024 and has run 848). Sizes in between are taken
   and tried on purpose, because a wall that moves with alignment depth or is not
   monotonic in residue count cannot honestly be a ceiling. Such a job is
   accepted with a `warnings` entry saying so, and if it does fail on device it
   comes back `failed` naming the wall and the models that have run that size —
   one job, nothing else affected. Read `measured_wall` if you want to pick a
   model that will finish rather than one that will be accepted.
-- **One more cap bounds the total, not a field.** A submission may cost up to
-  **10x** a 1024-residue run of the model you picked, and one structure up to **4x**,
-  where cost grows with the square of the residue count and linearly with
-  `diffusion_samples`, `recycling_steps` and `sampling_steps`. 10 structures of
-  1024 residues at default settings is exactly 10x; a larger structure costs more
-  (1152 residues is 1.27x), so fewer of them fit in one submission. Several knobs
-  turned up together do not fit either: 10 structures of 1024 residues at
-  `diffusion_samples: 3` is 30x and comes back `400` with type
-  `.../errors/submission-too-large`, naming what to reduce. `GET /v1/models`
-  reports the budget and the pricing under `limits` and `cost`.
-- Downloads are bounded in bytes, not requests: **32 GB/hour per network**, which
-  is dozens of full result archives. Over it, `429` with `Retry-After`. Polling job
-  status is not counted.
 - `Prefer: wait` is a preference, not a guarantee (RFC 7240): under load the
   request returns the job's current state at once. `Preference-Applied: wait` on
   the response means the hold happened; if it is absent, poll again.
 - Errors are RFC 9457 problem+json (`title`, `detail`).
-- No key needed; `Authorization: Bearer <key>` spends the user's account credits
-  instead of the free grant. It does not raise any limit.
-- **`402` with `out_of_credit: true`** means the balance is spent. The `detail`
-  says what the run would reserve and when the free grant renews. Tell the user;
-  retrying will not help until they add credit or the grant renews.
+- **`401` with `sign_in_required: true`** means no key or a bad one. Send the user
+  to `https://japanfold.aiand.com/account/token`.
+- **`402` with `out_of_credit: true`** means the balance is spent. Tell the user;
+  retrying will not help until they add funds.
 - Full machine-readable contract: `GET /v1/openapi.json`.
