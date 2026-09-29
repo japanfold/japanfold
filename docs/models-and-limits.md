@@ -16,14 +16,14 @@ curl -s https://api.japanfold.aiand.com/v1/models
 | `id` | MSA | Ligands | DNA/RNA | Affinity | Constr | PDE | Measured wall |
 |---|---|:-:|:-:|:-:|:-:|:-:|--:|
 | `boltz2` | always | ✓ | ✓ | ✓ | ✓ | ✓ | 1024 |
-| `esmfold2` | default | - | - | - | - | - | 1024 |
-| `esmfold2-fast` | never | - | - | - | - | - | 1024 |
+| `esmfold2` | default | ✓ | ✓ | - | - | - | 1024 |
+| `esmfold2-fast` | never | ✓ | ✓ | - | - | - | 1024 |
 | `protenix-v2` | default | ✓ | ✓ | - | - | - | 1024 |
 | `openfold3` | default | - | ✓ | - | - | - | 1024 |
 | `openbind` | default | ✓ | ✓ | - | - | - | 960 |
 | `rf3` | default | ✓ | ✓ | - | - | - | 1024 |
-| `opendde` | default | - | - | - | - | - | 544 |
-| `opendde-abag` | default | - | - | - | - | - | 544 |
+| `opendde` | default | - | - | - | - | - | 896 |
+| `opendde-abag` | default | - | - | - | - | - | 896 |
 
 Every model accepts up to 1024 residues per structure. The last column is
 `measured_wall`, the largest structure that model has actually folded on this
@@ -38,7 +38,7 @@ predicted distance error: Boltz-2 is the only model whose result rows carry
 
 **Boltz-2** (MIT and Recursion) is the default, the most capable, and the only
 model with affinity and constraints. **ESMFold-2** (Biohub) is language-model
-folding, protein chains only; `esmfold2-fast` is always single-sequence, for
+folding that co-folds protein, DNA, RNA and ligand chains; `esmfold2-fast` is always single-sequence, for
 screening many sequences at once. **Protenix-v2** (ByteDance) is
 AlphaFold3-family (Pairformer + atom diffusion) and strong at antibody-antigen.
 **OpenFold3** is the OpenFold Consortium's open AlphaFold3 reproduction, folding

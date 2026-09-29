@@ -51,8 +51,8 @@ curl -s -X POST https://api.japanfold.aiand.com/v1/predictions \
 ## Choosing a model
 
 Set `model`, default `boltz2`. Boltz-2 is the most capable and the only one that
-returns a binding affinity or accepts constraints; ESMFold-2 and OpenDDE are
-protein-only. The full capability matrix is on
+returns a binding affinity or accepts constraints; OpenDDE is protein-only. The
+full capability matrix is on
 [Models & limits](models-and-limits.md#prediction-models).
 
 ## Co-folding with a ligand + affinity (Boltz-2)
