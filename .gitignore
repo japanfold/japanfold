@@ -4,4 +4,3 @@ agent/
 skills-lock.json
 node_modules/
 .venv/
-site/

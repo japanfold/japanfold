@@ -2,7 +2,7 @@
 
 Fold proteins, co-fold with ligands (+ binding affinity), design binders, and
 embed sequences from your AI agent, via the
-[JapanFold](https://japanfold.com) API. Get a key at
+[JapanFold](https://japanfold.aiand.com) API. Get a key at
 [japanfold.aiand.com/account/token](https://japanfold.aiand.com/account/token) and set
 `JAPANFOLD_API_KEY`.
 **No local GPU.** Runs Boltz-2 / ESMFold-2 / Protenix-v2 / OpenFold3 /
@@ -30,7 +30,7 @@ npx skills add japanfold/japanfold -g       # global: every project / new chat
 **Claude Science** manages skills in-app (no installer): **Customize → Skills**,
 add from this repo (or paste `SKILL.md`) and **publish** it. Or skip install
 entirely — the API is public and self-describing, so just ask:
-*"use the JapanFold API at `api.japanfold.com` to fold …"*.
+*"use the JapanFold API at `api.japanfold.aiand.com` to fold …"*.
 
 ## Use
 
@@ -43,8 +43,8 @@ Or invoke it explicitly where supported: `/japanfold`.
 
 ## The API
 
-`https://api.japanfold.com`: async (submit → poll → download), a key on every call.
-Full contract at [`/v1/openapi.json`](https://api.japanfold.com/v1/openapi.json).
+`https://api.japanfold.aiand.com`: async (submit → poll → download), a key on every call.
+Full contract at [`/v1/openapi.json`](https://api.japanfold.aiand.com/v1/openapi.json).
 See [`SKILL.md`](SKILL.md) for endpoints, examples, and limits.
 
 Fast mode is **off** unless the agent sends `"params": {"fast": true}`. It gives higher

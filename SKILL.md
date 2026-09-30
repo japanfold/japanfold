@@ -23,7 +23,7 @@ metadata:
     - kind: service
       name: JapanFold API
       provider: JapanFold
-      info_url: https://japanfold.com
+      info_url: https://japanfold.aiand.com
 # allowed-tools is a Claude Code convenience (grants curl/python without a
 # prompt); other harnesses ignore it and use their own execution/permission model.
 allowed-tools:
@@ -40,7 +40,7 @@ binder you already designed), BoltzGen / RFdiffusion3 /
 PXDesign (binder design), and ESMC / SaProt (protein-language-model embeddings) on Tenstorrent
 hardware behind an HTTP API hosted in Japan. You call it as an async job
 (**submit → poll → download**) over plain HTTPS against
-`https://api.japanfold.com`. No model to install and no local GPU.
+`https://api.japanfold.aiand.com`. No model to install and no local GPU.
 
 **Key.** Every call needs one, read from `JAPANFOLD_API_KEY` (and
 `JAPANFOLD_BASE_URL` if the user was given another endpoint). If it is not set,
@@ -48,21 +48,27 @@ send the user to `https://japanfold.aiand.com/account/token`: they sign in with
 an email address and the page shows a key, and a new account comes with $100.
 Never ask for the key in the chat. The user sets it in their own shell and
 restarts you from there; a key pasted into a chat goes to the model provider.
-Work costs $0.34 per processor hour of chip time, taken from that balance.
+For the same reason never print it: check it with `[ -n "$JAPANFOLD_API_KEY" ]`,
+not `echo`, and pass it as `$JAPANFOLD_API_KEY` rather than writing its value
+into a command.
+Work is billed per processor hour of chip time, taken from that balance;
+`GET /v1/credits` returns the balance and the rate.
 
 Works from any agent/harness: use `curl` (Bash) or your language's HTTP client
 (`httpx`/`requests`, `fetch`, `net/http`, …) — whatever your environment has.
 If your environment sandboxes network egress (e.g. Claude Science), approve the
-host **`api.japanfold.com`** when prompted.
+host **`api.japanfold.aiand.com`** when prompted.
 
 ## Predict a structure
 
 Submit → poll until `status` is terminal → read results:
 
 ```bash
-BASE=${JAPANFOLD_BASE_URL:-https://api.japanfold.com}
+BASE=${JAPANFOLD_BASE_URL:-https://api.japanfold.aiand.com}
 H=(-H 'X-JapanFold-Client: skill' -H "Authorization: Bearer $JAPANFOLD_API_KEY")
-# 1. submit — input is a bare `sequence`, one `input` FASTA/YAML string, or a `targets` list
+# 1. submit — input is a bare `sequence`, one `input` FASTA/YAML string, or a `targets` list.
+#    To retry a submit that timed out, resend it with the same `Idempotency-Key: <unique>`
+#    header: you get the first job back instead of a second one to pay for.
 JOB=$(curl -s "${H[@]}" -X POST $BASE/v1/predictions -H 'Content-Type: application/json' \
   -d '{"model":"boltz2","name":"mytarget","sequence":"MKTAYIAKQRQISFVKSHFSRQLEE"}' \
   | python3 -c 'import sys,json; r=json.load(sys.stdin); print(r["id"]) if "id" in r else sys.exit(r["detail"])')
@@ -95,7 +101,7 @@ Python-kernel equivalent (Claude Science, notebooks):
 
 ```python
 import os, time, httpx
-BASE = os.environ.get("JAPANFOLD_BASE_URL", "https://api.japanfold.com")
+BASE = os.environ.get("JAPANFOLD_BASE_URL", "https://api.japanfold.aiand.com")
 jf = httpx.Client(base_url=BASE, headers={"X-JapanFold-Client": "skill",
                   "Authorization": f"Bearer {os.environ['JAPANFOLD_API_KEY']}"})
 job = jf.post("/v1/predictions", json={"model": "boltz2", "sequence": "MKT..."}).json()
