@@ -5,7 +5,7 @@ embed sequences from your AI agent, via the
 [JapanFold](https://japanfold.aiand.com) API. Get a key at
 [japanfold.aiand.com/account/token](https://japanfold.aiand.com/account/token) and set
 `JAPANFOLD_API_KEY`.
-**No local GPU.** Runs Boltz-2 / ESMFold-2 / Protenix-v2 / OpenFold3 /
+**No local GPU.** Runs Boltz-2 / ESMFold-2 / OpenFold3 /
 OpenBind-0 / RoseTTAFold3 / OpenDDE for structures, AF2-IG for scoring a binder you
 already designed, BoltzGen / RFdiffusion3 /
 PXDesign for design, and ESMC / SaProt for embeddings, on Tenstorrent.
@@ -15,7 +15,7 @@ standard, so it installs into **any** compatible harness with one command.
 
 ## Install
 
-One line installs it everywhere the open standard is supported — **Claude Code,
+One line installs it everywhere the open standard is supported: **Claude Code,
 Cursor, Codex, Gemini CLI, Cline, Windsurf, Copilot, Amp and the rest**:
 
 ```bash
@@ -24,17 +24,17 @@ npx skills add japanfold/japanfold -g       # global: every project / new chat
 ```
 
 - Target specific agents: `-a claude-code`, `-a cursor`, `-a codex`, `-a '*'` (all).
-- Prefer not to use the installer? It's just a file — drop `SKILL.md` into your
+- Prefer not to use the installer? It is one file: drop `SKILL.md` into your
   agent's skills directory (e.g. `~/.claude/skills/japanfold/SKILL.md`).
 
 **Claude Science** manages skills in-app (no installer): **Customize → Skills**,
 add from this repo (or paste `SKILL.md`) and **publish** it. Or skip install
-entirely — the API is public and self-describing, so just ask:
+entirely: the API is public and self-describing, so just ask:
 *"use the JapanFold API at `api.japanfold.aiand.com` to fold …"*.
 
 ## Use
 
-Once installed, just ask your agent in plain language:
+Once installed, ask your agent in plain language:
 
 > *"Fold this sequence with Boltz-2 and report the confidence: MKTAYIAK…"*
 > *"Design 10 nanobody binders against this target."*
