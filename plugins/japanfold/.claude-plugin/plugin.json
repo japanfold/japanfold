@@ -1,6 +1,6 @@
 {
   "name": "japanfold",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Predict 3D biomolecular structures and binding affinity (Boltz-2, ESMFold-2, OpenFold3, OpenBind-0, RoseTTAFold3, OpenDDE), score a binder you already designed against its target (AF2-IG), design de-novo binders/proteins (BoltzGen, RFdiffusion3, PXDesign), scaffold a functional motif around a pasted structure, and compute ESMC or SaProt protein-language-model embeddings via JapanFold, a hosted, Tenstorrent-accelerated HTTP API in Japan. Use to fold a protein or complex, co-fold a protein with a ligand and get affinity, design nanobody/antibody/peptide/ miniprotein binders against a target, turn a sequence into a PDB/mmCIF structure, or get a fixed-size embedding vector for search/clustering/ML features. Needs a JapanFold API key; no local GPU.",
   "author": {
     "name": "JapanFold",

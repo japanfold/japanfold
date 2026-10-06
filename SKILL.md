@@ -277,9 +277,9 @@ ligand atom). The keys are the open-source tt-bio engine's:
 The sidecar lists the arrays present (`arrays`, with shape, dtype and units) and, under
 `absent`, any the model cannot compute and why. Read it rather than assuming a key exists,
 and never treat a missing array as zeros. `GET /v1/models` has the same per model under
-`confidence`. ipTM is a results-row field, not in the file: `iptm` on every model for a
-multi-chain input, plus the chain-pair matrix `pair_chains_iptm` on Boltz-2, OpenDDE and
-ESMFold-2.
+`confidence`. ipTM is a results-row field, not in the file: for a multi-chain input every
+model's row has `iptm`, the chain-pair matrix `pair_chains_iptm` and its diagonal
+`chains_ptm`, keyed by chain position (`"0"`, `"1"`; ESMFold-2 keys by chain ID).
 
 ```python
 import json, numpy as np
