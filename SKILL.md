@@ -151,7 +151,7 @@ res = jf.get(f"/v1/jobs/{job['id']}/results").json()
   `properties:` for the affinity head).
 - `params`: `use_msa_server` (on by default for Boltz-2), `fast`, `recycling_steps`,
   `sampling_steps`, `diffusion_samples`, `output_format`, `seed` (default 0, echoed on the
-  job), `write_pae` (every prediction model: returns `<name>_pae.npz` with the full PAE
+  job), `use_tfg_guidance` (OpenDDE only, see below), `write_pae` (every prediction model: returns `<name>_pae.npz` with the full PAE
   matrix and, where the model computes them, PDE and contact probabilities; see Reading
   results). Not every model takes every one:
   a param the model cannot honour comes back as a 400 naming both, so read `caps` in
@@ -159,6 +159,25 @@ res = jf.get(f"/v1/jobs/{job['id']}/results").json()
   on ESMFold-2 Fast, which has no MSA encoder; on AF2-IG only `recycling_steps`,
   `output_format` and `write_pae`). Leave `recycling_steps` and `sampling_steps`
   out unless you mean to override a model's own value.
+- **Guided antibody docking (OpenDDE).** If the user knows part of an antibody-antigen
+  interface, add a top-level `constraint:` block to the YAML and send
+  `"use_tfg_guidance": true` (on `opendde` or `opendde-abag` only). The antibody chains move
+  as a rigid body during sampling until the prediction agrees. Residues are addressed as in
+  OpenDDE: `entity` = 1-based entry of `sequences`, `copy` = 1-based copy in its `id` list,
+  `position` = 1-based residue.
+
+  ```yaml
+  constraint:
+    movable_chains: [H, L]          # the antibody
+    contact:                        # antigen residue <-> antibody residue, 3.5-8 A by default
+      - {entity1: 3, position1: 248, entity2: 2, position2: 93}
+    # or, when only the antigen side is known (pocket mode), instead of contact:
+    # epitope: {residues: [{entity: 3, copy: 1, position: 248}], min_fraction: 0.5}
+  ```
+
+  A wrong contact pulls the antibody to the wrong place, so tell the user to leave out
+  pairs they are unsure of; an epitope with `min_fraction` below 1 tolerates a few wrong
+  residues. Guided folds take longer and are billed for the time they run.
 - **Fast mode is off by default.** Send `"fast": true` for higher throughput; it may be
   slightly less accurate. The workbench turns it on for humans, the API never does it for
   you. ESMFold-2 is the exception: it always runs fast here and its job says so.
