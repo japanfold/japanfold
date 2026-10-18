@@ -66,7 +66,8 @@ host **`api.japanfold.aiand.com`** when prompted.
 **MCP.** The same API is an MCP server at `https://api.japanfold.aiand.com/mcp`.
 If the `japanfold` MCP tools (`create_prediction`, `get_job`, `get_results`, ...)
 are available, use them instead of curl: they take the same fields as the
-endpoints below. To add the server to Claude Code:
+endpoints below. A succeeded `get_job` carries `download`, one shell command that
+fetches every result file; run it rather than calling `get_artifact` per file. To add the server to Claude Code:
 `claude mcp add --transport http japanfold https://api.japanfold.aiand.com/mcp --header "Authorization: Bearer $JAPANFOLD_API_KEY"`.
 
 ## Predict a structure
@@ -298,7 +299,8 @@ curl -s "${H[@]}" -X POST $BASE/v1/embeddings -H 'Content-Type: application/json
 and, for a prediction, per-target `rows` (`confidence_score`, `complex_plddt`,
 `iptm`, affinity fields); for a design, the ranked `designs`. Pass lines mirror
 Boltz-2: interface `iptm` > 0.5, fold `complex_plddt` > 0.7. Download a single
-structure from its artifact `url`, or the whole bundle from `…/archive`.
+structure from its artifact `url`, or the whole bundle from `…/archive`. A succeeded
+`GET /v1/jobs/{id}` also carries `download`, one shell command for every file.
 
 **Confidence matrices.** With `write_pae: true` each target also has an artifact of type
 `pae`, `<name>_pae.npz` (compressed numpy, about 11 MB at 1,024 tokens), and one of type
