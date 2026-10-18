@@ -39,7 +39,7 @@ co-fold ligands, OpenDDE is protein-complex / antibody-antigen docking), AF2-IG 
 binder you already designed), BoltzGen / RFdiffusion3 /
 PXDesign (binder design), and ESMC / SaProt (protein-language-model embeddings) on Tenstorrent
 hardware behind an HTTP API hosted in Japan. You call it as an async job
-(**submit → poll → download**) over plain HTTPS against
+(**submit → wait → download**) over plain HTTPS against
 `https://api.japanfold.aiand.com`. No model to install and no local GPU.
 
 **Key.** Every call needs one, read from `JAPANFOLD_API_KEY` (and
@@ -52,16 +52,26 @@ For the same reason never print it: check it with `[ -n "$JAPANFOLD_API_KEY" ]`,
 not `echo`, and pass it as `$JAPANFOLD_API_KEY` rather than writing its value
 into a command.
 Work is billed per processor hour of chip time, taken from that balance;
-`GET /v1/credits` returns the balance and the rate.
+`GET /v1/credits` returns the balance, the rate and `billing_url`, the page where
+a person adds funds. What was spent in a period
+is `GET /v1/usage?from=YYYY-MM-DD&to=YYYY-MM-DD&limit=1`: `summary.amount` is
+the total in US dollars (`summary.currency`), and `summary.by_model` splits it
+per model. Quote `amount`; every `*_micros` field is millionths of a dollar.
 
 Works from any agent/harness: use `curl` (Bash) or your language's HTTP client
 (`httpx`/`requests`, `fetch`, `net/http`, …), whatever your environment has.
 If your environment sandboxes network egress (e.g. Claude Science), approve the
 host **`api.japanfold.aiand.com`** when prompted.
 
+**MCP.** The same API is an MCP server at `https://api.japanfold.aiand.com/mcp`.
+If the `japanfold` MCP tools (`create_prediction`, `get_job`, `get_results`, ...)
+are available, use them instead of curl: they take the same fields as the
+endpoints below. To add the server to Claude Code:
+`claude mcp add --transport http japanfold https://api.japanfold.aiand.com/mcp --header "Authorization: Bearer $JAPANFOLD_API_KEY"`.
+
 ## Predict a structure
 
-Submit → poll until `status` is terminal → read results:
+Submit → wait until `status` is terminal → read results:
 
 ```bash
 BASE=${JAPANFOLD_BASE_URL:-https://api.japanfold.aiand.com}
@@ -73,22 +83,31 @@ JOB=$(curl -s "${H[@]}" -X POST $BASE/v1/predictions -H 'Content-Type: applicati
   -d '{"model":"boltz2","name":"mytarget","sequence":"MKTAYIAKQRQISFVKSHFSRQLEE"}' \
   | python3 -c 'import sys,json; r=json.load(sys.stdin); print(r["id"]) if "id" in r else sys.exit(r["detail"])')
 
-# 2. poll. The first job on a processor also loads the model's weights. Tip: add
-#    header `Prefer: wait=60` to the GET to block until the job finishes (up to 60s).
-#    When the service is busy the job carries `queue`: its `reason`, how many
-#    `accounts_ahead` and the fleet's chip counts. That is a real wait, not a
-#    stall, so keep polling. It has no time estimate, so do not invent one.
-curl -s "${H[@]}" $BASE/v1/jobs/$JOB          # -> {"status":"queued|running|succeeded|failed", ...}
+# 2. wait. `?wait=60` holds the GET until the job finishes or 60 s pass, so loop on it
+#    with no sleep: each call returns the moment the job is done. The first job on a
+#    processor also loads the model's weights. When the service is busy the job carries
+#    `queue`: its `reason`, how many `accounts_ahead` and the fleet's chip counts. That
+#    is a real wait, not a stall, so keep waiting. It has no time estimate, so do not
+#    invent one.
+while :; do
+  S=$(curl -s "${H[@]}" "$BASE/v1/jobs/$JOB?wait=60" | tee job.json \
+      | python3 -c 'import sys,json; print(json.load(sys.stdin).get("status"))')
+  case $S in queued|running) ;; *) break ;; esac
+done
+cat job.json                                  # -> {"status":"succeeded|failed|canceled", ...}
 
 # 3. once status=succeeded: scores + artifact URLs, then download the bundle.
 #    A succeeded job that carries `partial` delivered less than it was asked for (a design
 #    shard or a target failed): tell the user `partial.delivered` of `partial.requested`.
 curl -s "${H[@]}" $BASE/v1/jobs/$JOB/results
-curl -sOJ "${H[@]}" $BASE/v1/jobs/$JOB/archive          # zip: structures + results.json
+curl -fsLOJ "${H[@]}" $BASE/v1/jobs/$JOB/archive        # zip: structures + results.json
+curl -fsL "${H[@]}" -o "$F" "$BASE/v1/jobs/$JOB/artifacts/$F"  # one file named in results; -L follows to storage
 ```
 
 **Multi-chain complexes** (e.g. insulin's A+B chains) go in the `input` YAML,
-one `protein` entry per chain, not the bare `sequence` field:
+one `protein` entry per chain, not the bare `sequence` field. A FASTA in `input` works
+too, with any headers (`>insulin_a`, a UniProt `>sp|P01308|INS_HUMAN ...`): records are
+named A, B, ... and the job's `warnings` say which record became which chain.
 
 ```bash
 curl -s "${H[@]}" -X POST $BASE/v1/predictions -H 'Content-Type: application/json' -d '{
@@ -100,14 +119,14 @@ curl -s "${H[@]}" -X POST $BASE/v1/predictions -H 'Content-Type: application/jso
 Python-kernel equivalent (Claude Science, notebooks):
 
 ```python
-import os, time, httpx
+import os, httpx
 BASE = os.environ.get("JAPANFOLD_BASE_URL", "https://api.japanfold.aiand.com")
 jf = httpx.Client(base_url=BASE, headers={"X-JapanFold-Client": "skill",
-                  "Authorization": f"Bearer {os.environ['JAPANFOLD_API_KEY']}"})
+                  "Authorization": f"Bearer {os.environ['JAPANFOLD_API_KEY']}"},
+                  timeout=90)
 job = jf.post("/v1/predictions", json={"model": "boltz2", "sequence": "MKT..."}).json()
 while job["status"] not in ("succeeded", "failed", "canceled"):
-    time.sleep(5)
-    job = jf.get(f"/v1/jobs/{job['id']}").json()
+    job = jf.get(f"/v1/jobs/{job['id']}", params={"wait": 60}).json()  # held, no sleep
 res = jf.get(f"/v1/jobs/{job['id']}/results").json()
 ```
 
@@ -231,21 +250,22 @@ curl -s "${H[@]}" -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
        "params":{"num_designs":4}}'
 ```
 
-`model` is optional but must match the protocol's engine, else `400`. Poll the
+`model` is optional but must match the protocol's engine, else `400`. Wait the
 same way; `/v1/jobs/{id}/results` returns the designs.
 
 ## Compute protein embeddings (ESMC, SaProt)
 
-Submit → poll → download, same as predict/design:
+Submit → wait → download, same as predict/design:
 
 ```bash
 JOB=$(curl -s "${H[@]}" -X POST $BASE/v1/embeddings -H 'Content-Type: application/json' \
   -d '{"model":"esmc-600m","sequence":"MKTAYIAKQRQISFVKSHFSRQLEE"}' \
   | python3 -c 'import sys,json; r=json.load(sys.stdin); print(r["id"]) if "id" in r else sys.exit(r["detail"])')
 
-curl -s "${H[@]}" $BASE/v1/jobs/$JOB               # poll until status is terminal
+curl -s "${H[@]}" "$BASE/v1/jobs/$JOB?wait=60"     # repeat until status is terminal
 curl -s "${H[@]}" $BASE/v1/jobs/$JOB/results       # -> sequences: [{id, length, file}, ...]
-curl -sOJ "${H[@]}" $BASE/v1/jobs/$JOB/archive     # zip: manifest.json + embeddings
+curl -fsLOJ "${H[@]}" $BASE/v1/jobs/$JOB/archive   # zip: manifest.json + embeddings
+curl -fsL "${H[@]}" -o "$F" "$BASE/v1/jobs/$JOB/artifacts/$F"  # one file, F = a sequences[].file
 ```
 
 Multiple sequences go in `sequences` (a list) or `input` (a FASTA/YAML blob, the
@@ -328,12 +348,16 @@ pae = m["pae"]; contacts = m["contact_probs"] if "contact_probs" in side["arrays
   comes back `failed` naming the wall and the models that have run that size.
   One job, nothing else affected. Read `measured_wall` if you want to pick a
   model that will finish rather than one that will be accepted.
-- `Prefer: wait` is a preference, not a guarantee (RFC 7240): under load the
-  request returns the job's current state at once. `Preference-Applied: wait` on
-  the response means the hold happened; if it is absent, poll again.
+- `?wait=60` (or the header `Prefer: wait=60`, which also works on a create) is a
+  preference, not a guarantee (RFC 7240): under load the request returns the job's
+  current state at once with `Retry-After`. `Preference-Applied: wait` on the
+  response means the hold happened. Never `sleep` between waits; the hold already
+  paces the loop. From a shell, `japanfold wait JOB` does the same loop.
 - Errors are RFC 9457 problem+json (`title`, `detail`).
-- **`401` with `sign_in_required: true`** means no key or a bad one. Send the user
-  to `https://japanfold.aiand.com/account/token`.
+- **`401` with `sign_in_required: true`** means no key or a bad one. If
+  `JAPANFOLD_API_KEY` is set, send it as `Authorization: Bearer $JAPANFOLD_API_KEY`;
+  if there is none, or the 401 says it is revoked, send the user to
+  `https://japanfold.aiand.com/account/token`.
 - **`402` with `out_of_credit: true`** means the balance is spent. Tell the user;
   retrying will not help until they add funds.
 - Full machine-readable contract: `GET /v1/openapi.json`.

@@ -10,6 +10,18 @@ OpenBind-0 / RoseTTAFold3 / OpenDDE for structures, AF2-IG for scoring a binder 
 already designed, BoltzGen / RFdiffusion3 /
 PXDesign for design, and ESMC / SaProt for embeddings, on Tenstorrent.
 
+Agents can call the API directly, no install needed:
+
+```bash
+export JAPANFOLD_API_KEY=jf_live_...          # from japanfold.aiand.com/account/token
+curl -s https://api.japanfold.aiand.com/v1/predictions \
+  -H "Authorization: Bearer $JAPANFOLD_API_KEY" -H 'Content-Type: application/json' \
+  -d '{"model":"esmfold2","sequence":"MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQ"}'
+```
+
+Base URL `https://api.japanfold.aiand.com`, key in `Authorization: Bearer`. The
+agent-readable summary is [`llms.txt`](https://japanfold.aiand.com/llms.txt).
+
 It's a single [`SKILL.md`](SKILL.md) built on the open [Agent Skills](https://agentskills.io)
 standard, so it installs into **any** compatible harness with one command.
 
@@ -24,8 +36,10 @@ npx skills add japanfold/japanfold -g       # global: every project / new chat
 ```
 
 - Target specific agents: `-a claude-code`, `-a cursor`, `-a codex`, `-a '*'` (all).
-- Prefer not to use the installer? It is one file: drop `SKILL.md` into your
-  agent's skills directory (e.g. `~/.claude/skills/japanfold/SKILL.md`).
+- Prefer not to use the installer? It is one file. Download it unchanged into
+  your agent's skills directory, for Claude Code:
+  `curl -fsSL --create-dirs -o ~/.claude/skills/japanfold/SKILL.md https://japanfold.aiand.com/skill.md`.
+  A web-fetch tool returns only a summary of the page, so an agent should use curl too.
 
 **Claude Science** manages skills in-app (no installer): **Customize → Skills**,
 add from this repo (or paste `SKILL.md`) and **publish** it. Or skip install
