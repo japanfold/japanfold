@@ -70,6 +70,7 @@ endpoints below. Follow a job with `get_job` and `wait=100`: one call holds up t
 100 s for it to end. A succeeded `get_job` carries `download`, one shell command that
 fetches every result file; run it rather than calling `get_artifact` per file. To add the server to Claude Code:
 `claude mcp add --transport http japanfold https://api.japanfold.aiand.com/mcp --header "Authorization: Bearer $JAPANFOLD_API_KEY"`.
+claude.ai / Claude Desktop / ChatGPT: add `https://api.japanfold.aiand.com/mcp` as a connector and sign in, no key needed.
 
 ## Predict a structure
 
