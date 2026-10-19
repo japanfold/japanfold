@@ -110,8 +110,9 @@ curl -fsL "${H[@]}" -o "$F" "$BASE/v1/jobs/$JOB/artifacts/$F"  # one file named 
 
 **Multi-chain complexes** (e.g. insulin's A+B chains) go in the `input` YAML,
 one `protein` entry per chain, not the bare `sequence` field. A FASTA in `input` works
-too, with any headers (`>insulin_a`, a UniProt `>sp|P01308|INS_HUMAN ...`): records are
-named A, B, ... and the job's `warnings` say which record became which chain.
+too, on every model, with any headers (`>insulin_a`, `>heavy chain`, a UniProt
+`>sp|P01308|INS_HUMAN ...`): a name the model can't hold becomes A, B, ... and the job's
+`warnings` say which record became which chain.
 
 ```bash
 curl -s "${H[@]}" -X POST $BASE/v1/predictions -H 'Content-Type: application/json' -d '{
