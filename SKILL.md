@@ -66,7 +66,8 @@ host **`api.japanfold.aiand.com`** when prompted.
 **MCP.** The same API is an MCP server at `https://api.japanfold.aiand.com/mcp`.
 If the `japanfold` MCP tools (`create_prediction`, `get_job`, `get_results`, ...)
 are available, use them instead of curl: they take the same fields as the
-endpoints below. A succeeded `get_job` carries `download`, one shell command that
+endpoints below. Follow a job with `get_job` and `wait=100`: one call holds up to
+100 s for it to end. A succeeded `get_job` carries `download`, one shell command that
 fetches every result file; run it rather than calling `get_artifact` per file. To add the server to Claude Code:
 `claude mcp add --transport http japanfold https://api.japanfold.aiand.com/mcp --header "Authorization: Bearer $JAPANFOLD_API_KEY"`.
 
@@ -79,7 +80,8 @@ BASE=${JAPANFOLD_BASE_URL:-https://api.japanfold.aiand.com}
 H=(-H 'X-JapanFold-Client: skill' -H "Authorization: Bearer $JAPANFOLD_API_KEY")
 # 1. submit: input is a bare `sequence`, one `input` FASTA/YAML string, or a `targets` list.
 #    To retry a submit that timed out, resend it with the same `Idempotency-Key: <unique>`
-#    header: you get the first job back instead of a second one to pay for.
+#    header: you get the first job back instead of a second one to pay for. Keys never
+#    expire on the account, so make each new submission's key unique (uuidgen).
 JOB=$(curl -s "${H[@]}" -X POST $BASE/v1/predictions -H 'Content-Type: application/json' \
   -d '{"model":"boltz2","name":"mytarget","sequence":"MKTAYIAKQRQISFVKSHFSRQLEE"}' \
   | python3 -c 'import sys,json; r=json.load(sys.stdin); print(r["id"]) if "id" in r else sys.exit(r["detail"])')
@@ -217,9 +219,17 @@ filtered top set with confidence metrics. Protocols: `protein-anything`,
 
 ```bash
 curl -s "${H[@]}" -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
-  -d '{"model":"boltzgen","protocol":"nanobody-anything","spec":"<YAML design spec>",
-       "params":{"num_designs":10}}'
+  -d '{"model":"boltzgen","protocol":"protein-anything","params":{"num_designs":10},
+       "spec":"entities:\n  - protein: {id: A, sequence: <target sequence>}\n  - protein: {id: B, sequence: 60..80}\n"}'
 ```
+
+The spec is a list under `entities:`, not predict's `sequences:`. Each chain is a
+`protein`, `dna`, `rna` or `ligand` with an `id`. The chain to design gets a
+residue-count range as its sequence (`60..80`); letters such as `XXXX` are read as a
+fixed chain, not a design. There is no `binder:`, `hotspots:`, `version:` or pocket
+constraint. To aim at an epitope, give the target `binding_types: {binding: '45..52'}`
+(1-based residues). A spec the engine would reject is refused at submit with a `400`
+that names the problem and shows this shape.
 
 **RFdiffusion3** runs all-atom diffusion directly around a target structure you
 paste in, with a contig saying what stays fixed and what gets designed. Protocols:
