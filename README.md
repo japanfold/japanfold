@@ -55,6 +55,17 @@ Once installed, ask your agent in plain language:
 
 Or invoke it explicitly where supported: `/japanfold`.
 
+## MCP
+
+The API is also a remote MCP server at `https://api.japanfold.aiand.com/mcp`, listed in the
+[MCP Registry](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.japanfold) as
+`io.github.japanfold/japanfold`. claude.ai, Claude Desktop and ChatGPT add it as a connector and
+sign in, no key needed. Claude Code:
+`claude mcp add --transport http japanfold https://api.japanfold.aiand.com/mcp --header "Authorization: Bearer $JAPANFOLD_API_KEY"`.
+
+To publish a new registry version, bump `version` in [`server.json`](server.json) and run
+`mcp-publisher login github && mcp-publisher publish`.
+
 ## The API
 
 `https://api.japanfold.aiand.com`: async (submit → poll → download), a key on every call.

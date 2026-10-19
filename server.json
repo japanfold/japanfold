@@ -1,0 +1,18 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.japanfold/japanfold",
+  "title": "JapanFold",
+  "description": "Fold proteins, co-fold ligands with binding affinity, design binders and embed sequences.",
+  "version": "1.0.0",
+  "websiteUrl": "https://japanfold.aiand.com",
+  "repository": {
+    "url": "https://github.com/japanfold/japanfold",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://api.japanfold.aiand.com/mcp"
+    }
+  ]
+}
