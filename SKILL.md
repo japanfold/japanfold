@@ -82,7 +82,8 @@ H=(-H 'X-JapanFold-Client: skill' -H "Authorization: Bearer $JAPANFOLD_API_KEY")
 # 1. submit: input is a bare `sequence`, one `input` FASTA/YAML string, or a `targets` list.
 #    To retry a submit that timed out, resend it with the same `Idempotency-Key: <unique>`
 #    header: you get the first job back instead of a second one to pay for. Keys never
-#    expire on the account, so make each new submission's key unique (uuidgen).
+#    expire on the account, so make each new submission's key unique:
+#    `python3 -c 'import uuid; print(uuid.uuid4())'` (uuidgen is missing on many hosts).
 JOB=$(curl -s "${H[@]}" -X POST $BASE/v1/predictions -H 'Content-Type: application/json' \
   -d '{"model":"boltz2","name":"mytarget","sequence":"MKTAYIAKQRQISFVKSHFSRQLEE"}' \
   | python3 -c 'import sys,json; r=json.load(sys.stdin); print(r["id"]) if "id" in r else sys.exit(r["detail"])')
