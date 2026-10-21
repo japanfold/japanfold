@@ -122,6 +122,20 @@ curl -s "${H[@]}" -X POST $BASE/v1/predictions -H 'Content-Type: application/jso
 }'
 ```
 
+**Many separate proteins** (a screen, a list of candidates) go in ONE job as a `targets`
+list, one entry each. Records inside a single `input` are chains of one complex, so never
+paste a screen there. Each target gets its own structure, `<name>.pdb` with
+`output_format: pdb` (the default is mmCIF), and its own row in `results`, so one job
+covers the whole set:
+
+```bash
+curl -s "${H[@]}" -X POST $BASE/v1/predictions -H 'Content-Type: application/json' -d '{
+  "model":"esmfold2-fast","name":"screen","params":{"output_format":"pdb"},
+  "targets":[{"name":"cand01","content":">cand01\nMQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEG"},
+             {"name":"cand02","content":">cand02\nTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIF"}]
+}'
+```
+
 Python-kernel equivalent (Claude Science, notebooks):
 
 ```python
