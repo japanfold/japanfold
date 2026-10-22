@@ -19,8 +19,10 @@ curl -s https://api.japanfold.aiand.com/v1/predictions \
   -d '{"model":"esmfold2","sequence":"MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQ"}'
 ```
 
-Base URL `https://api.japanfold.aiand.com`, key in `Authorization: Bearer`. The
-agent-readable summary is [`llms.txt`](https://japanfold.aiand.com/llms.txt).
+Base URL `https://api.japanfold.aiand.com`, key in `Authorization: Bearer`.
+`GET /v1/models` lists the model ids to send (`boltz2`, `esmfold2`, `openfold3`, ...)
+with their size limits. The agent-readable summary is
+[`llms.txt`](https://japanfold.aiand.com/llms.txt).
 
 It's a single [`SKILL.md`](SKILL.md) built on the open [Agent Skills](https://agentskills.io)
 standard, so it installs into **any** compatible harness with one command.
