@@ -4,7 +4,7 @@ description: >-
   Predict 3D biomolecular structures and binding affinity (Boltz-2, ESMFold-2,
   OpenFold3, OpenBind-0, RoseTTAFold3, OpenDDE), score a binder you
   already designed against its target (AF2-IG), design de-novo
-  binders/proteins (BoltzGen, RFdiffusion3, PXDesign),
+  binders/proteins (BoltzGen, RFdiffusion3, PXDesign, RFD4-Proteina),
   scaffold a functional motif around a pasted structure, and compute ESMC or
   SaProt protein-language-model embeddings via JapanFold, a hosted,
   Tenstorrent-accelerated HTTP API in Japan. Use to fold a protein or complex, co-fold a
@@ -37,7 +37,8 @@ JapanFold runs Boltz-2 / ESMFold-2 / OpenFold3 / OpenBind-0 / RoseTTAFold3 /
 OpenDDE (structure prediction; Boltz-2 also does affinity, OpenBind-0 and RoseTTAFold3
 co-fold ligands, OpenDDE is protein-complex / antibody-antigen docking), AF2-IG (scores a
 binder you already designed), BoltzGen / RFdiffusion3 /
-PXDesign (binder design), and ESMC / SaProt (protein-language-model embeddings) on Tenstorrent
+PXDesign / RFD4-Proteina (binder design), and ESMC / SaProt (protein-language-model
+embeddings) on Tenstorrent
 hardware behind an HTTP API hosted in Japan. You call it as an async job
 (**submit → wait → download**) over plain HTTPS against
 `https://api.japanfold.aiand.com`. No model to install and no local GPU.
@@ -222,9 +223,9 @@ res = jf.get(f"/v1/jobs/{job['id']}/results").json()
   you. ESMFold-2 is the exception: it always runs fast here and its job says so.
 - `GET /v1/models` lists every model, protocol, parameter, and the current limits.
 
-## Design binders (BoltzGen, RFdiffusion3 or PXDesign)
+## Design binders (BoltzGen, RFdiffusion3, PXDesign or RFD4-Proteina)
 
-Three design models, and you pick one. They take different inputs, so the choice
+Four design models, and you pick one. They take different inputs, so the choice
 comes first. `GET /v1/models` returns `design_models`, each model's `params`, and
 each protocol's `engine`.
 
@@ -277,6 +278,27 @@ curl -s "${H[@]}" -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
        "chains":"A","binder_length":80,"hotspots":"A64,A65,A66",
        "params":{"num_designs":4}}'
 ```
+
+**RFD4-Proteina** also takes a pasted structure plus a contig, and decodes
+coordinates and a sequence in one step, so every design comes back sequenced.
+Protocols: `rfd4-binder`, `rfd4-scaffold`. Params: `num_designs`, `recipe`
+(`thinking_low` / `thinking_medium` / `thinking_high`, 120 / 180 / 300 trunk
+passes a design, cost follows), `nsteps`, `seed`.
+
+```bash
+curl -s "${H[@]}" -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
+  -d '{"model":"rfd4","protocol":"rfd4-binder","structure":"<mmCIF text>",
+       "contig":"60-60, /0, A2-115","params":{"num_designs":4}}'
+```
+
+**mmCIF only**: a pasted PDB is refused at submit, because the model conditions on
+bonds and formal charges a PDB does not reliably carry. Use RFdiffusion3 if you only
+have a PDB. The contig reads left to right: a bare number or range designs that many
+residues, `/0` starts a new chain, a chain-range like `A2-115` keeps that part of the
+structure. Chain and residue ids are the file's own (`label_asym_id` / `label_seq_id`),
+which can differ from what a viewer shows; a contig matching no atoms is refused at
+submit. `hotspots` is optional. Designs are unranked, so refold the ones you like with
+a prediction and read `iptm`.
 
 `model` is optional but must match the protocol's engine, else `400`. Wait the
 same way; `/v1/jobs/{id}/results` returns the designs.
@@ -363,8 +385,8 @@ pae = m["pae"]; contacts = m["contact_probs"] if "contact_probs" in side["arrays
   1664 for OpenFold3, 1664 for OpenBind-0, 1600 for RoseTTAFold3, 1536 for OpenDDE · General
   and 1536 for OpenDDE · Antibody-Antigen, and 1024 for every other folding model
   (AF2-IG counts the target plus the binder). Design is bounded the same way: RFdiffusion3's contig
-  (motif + designed regions) caps at 1536 and PXDesign's target chains plus
-  binder at 1536, and `binder_length` is 8-200. `GET /v1/models` publishes each
+  (motif + designed regions) caps at 1536, PXDesign's target chains plus
+  binder at 1536, RFD4-Proteina's contig at 512, and `binder_length` is 8-200. `GET /v1/models` publishes each
   model's `max_residues`. Over a cap → `400` naming the model and its
   ceiling. Numeric params are clamped to range.
 - **A model's ceiling is not its track record.** `GET /v1/models` reports both:

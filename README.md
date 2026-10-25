@@ -8,7 +8,7 @@ embed sequences from your AI agent, via the
 **No local GPU.** Runs Boltz-2 / ESMFold-2 / OpenFold3 /
 OpenBind-0 / RoseTTAFold3 / OpenDDE for structures, AF2-IG for scoring a binder you
 already designed, BoltzGen / RFdiffusion3 /
-PXDesign for design, and ESMC / SaProt for embeddings, on Tenstorrent.
+PXDesign / RFD4-Proteina for design, and ESMC / SaProt for embeddings, on Tenstorrent.
 
 Agents can call the API directly, no install needed:
 
