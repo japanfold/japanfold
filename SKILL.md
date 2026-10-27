@@ -249,6 +249,15 @@ constraint. To aim at an epitope, give the target `binding_types: {binding: '45.
 (1-based residues). A spec the engine would reject is refused at submit with a `400`
 that names the problem and shows this shape.
 
+**A target structure can be named instead of pasted.** Every `structure` field (and
+AF2-IG's `target: structure:`) takes `pdb:1ABC` (an RCSB entry; a bare 4-character id
+works too) or `afdb:P69905` (the AlphaFold DB model of a UniProt accession). The API
+fetches the entry's mmCIF and checks it exactly like a paste; the job's `fetched` field
+records the id and the sha256 of what ran. An unknown id is a free `400` at submit.
+Don't download and paste an entry yourself, and never cut it down to fit a tool call:
+paste text only for a structure that is not in the PDB or AlphaFold DB, such as your
+own model or an edited file.
+
 **RFdiffusion3** runs all-atom diffusion directly around a target structure you
 paste in, with a contig saying what stays fixed and what gets designed. Protocols:
 `rfd3-binder`, `rfd3-scaffold`, `rfd3-na-binder`. Params: `num_designs`,
@@ -256,7 +265,7 @@ paste in, with a contig saying what stays fixed and what gets designed. Protocol
 
 ```bash
 curl -s "${H[@]}" -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
-  -d '{"model":"rfd3","protocol":"rfd3-binder","structure":"<PDB or mmCIF text>",
+  -d '{"model":"rfd3","protocol":"rfd3-binder","structure":"pdb:<id> or <PDB/mmCIF text>",
        "contig":"A1-150,60-80","params":{"num_designs":4}}'
 ```
 
@@ -274,7 +283,7 @@ the conditioning worked.
 
 ```bash
 curl -s "${H[@]}" -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
-  -d '{"model":"pxdesign","protocol":"pxdesign-binder","structure":"<PDB or mmCIF text>",
+  -d '{"model":"pxdesign","protocol":"pxdesign-binder","structure":"pdb:<id> or <PDB/mmCIF text>",
        "chains":"A","binder_length":80,"hotspots":"A64,A65,A66",
        "params":{"num_designs":4}}'
 ```
@@ -287,7 +296,7 @@ passes a design, cost follows), `nsteps`, `seed`.
 
 ```bash
 curl -s "${H[@]}" -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
-  -d '{"model":"rfd4","protocol":"rfd4-binder","structure":"<mmCIF text>",
+  -d '{"model":"rfd4","protocol":"rfd4-binder","structure":"pdb:<id> or <mmCIF text>",
        "contig":"60-60, /0, A2-115","params":{"num_designs":4}}'
 ```
 
@@ -297,7 +306,13 @@ have a PDB. The contig reads left to right: a bare number or range designs that 
 residues, `/0` starts a new chain, a chain-range like `A2-115` keeps that part of the
 structure. Chain and residue ids are the file's own (`label_asym_id` / `label_seq_id`),
 which can differ from what a viewer shows; a contig matching no atoms is refused at
-submit. `hotspots` is optional. Designs are unranked, so refold the ones you like with
+submit. The contig always keeps something: RFD4 designs against a structure here, so
+`"60-60"` with nothing preserved is refused rather than queued. To redesign an antibody
+or nanobody CDR, keep the framework either side of the loop in one run and the antigen
+as its own chain: `"A9-40, 8, A50-93, /0, B3-15"` designs 8 CDR residues between kept
+framework A9-40 and A50-93, against partner chain B. Two kept ranges of one chain must
+not be split by `/0`, which would ask for two output chains with the same name.
+`hotspots` is optional. Designs are unranked, so refold the ones you like with
 a prediction and read `iptm`.
 
 `model` is optional but must match the protocol's engine, else `400`. Wait the
