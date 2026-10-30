@@ -416,9 +416,9 @@ pae = m["pae"]; contacts = m["contact_probs"] if "contact_probs" in side["arrays
   model that will finish rather than one that will be accepted.
 - `?wait=60` (or the header `Prefer: wait=60`, which also works on a create) is a
   preference, not a guarantee (RFC 7240): under load the request returns the job's
-  current state at once with `Retry-After`. `Preference-Applied: wait` on the
-  response means the hold happened. Never `sleep` between waits; the hold already
-  paces the loop. From a shell, `japanfold wait JOB` does the same loop.
+  current state at once with `Retry-After` and a `wait_refused` field saying no
+  hold happened; pause that many seconds before the next call. Otherwise never
+  `sleep` between waits, the hold already paces the loop. From a shell, `japanfold wait JOB` does the same loop.
 - Errors are RFC 9457 problem+json (`title`, `detail`).
 - **`401` with `sign_in_required: true`** means no key or a bad one. If
   `JAPANFOLD_API_KEY` is set, send it as `Authorization: Bearer $JAPANFOLD_API_KEY`;
