@@ -61,6 +61,8 @@ per model. Quote `amount`; every `*_micros` field is millionths of a dollar.
 
 Works from any agent/harness: use `curl` (Bash) or your language's HTTP client
 (`httpx`/`requests`, `fetch`, `net/http`, …), whatever your environment has.
+A terminal can also use the CLI: `pip install japanfold`, then `japanfold --help`
+(same key, `--json` on every command, `wait JOB_ID` blocks until a job ends).
 If your environment sandboxes network egress (e.g. Claude Science), approve the
 host **`api.japanfold.aiand.com`** when prompted.
 
@@ -415,9 +417,11 @@ pae = m["pae"]; contacts = m["contact_probs"] if "contact_probs" in side["arrays
   One job, nothing else affected. Read `measured_wall` if you want to pick a
   model that will finish rather than one that will be accepted.
 - `?wait=60` (or the header `Prefer: wait=60`, which also works on a create) is a
-  preference, not a guarantee (RFC 7240): under load the request returns the job's
-  current state at once with `Retry-After` and a `wait_refused` field saying no
-  hold happened; pause that many seconds before the next call. Otherwise never
+  preference, not a guarantee (RFC 7240). One account is held on two jobs at a
+  time, so wait on one job at a time, not on a whole batch in parallel. Past that,
+  or under heavy load, the request returns the job's current state at once with
+  `Retry-After` and a `wait_refused` field saying no hold happened; pause that many
+  seconds before the next call. Otherwise never
   `sleep` between waits, the hold already paces the loop. From a shell, `japanfold wait JOB` does the same loop.
 - Errors are RFC 9457 problem+json (`title`, `detail`).
 - **`401` with `sign_in_required: true`** means no key or a bad one. If
