@@ -84,8 +84,8 @@ BASE=${JAPANFOLD_BASE_URL:-https://api.japanfold.aiand.com}
 H=(-H 'X-JapanFold-Client: skill' -H "Authorization: Bearer $JAPANFOLD_API_KEY")
 # 1. submit: input is a bare `sequence`, one `input` FASTA/YAML string, or a `targets` list.
 #    To retry a submit that timed out, resend it with the same `Idempotency-Key: <unique>`
-#    header: you get the first job back instead of a second one to pay for. Keys never
-#    expire on the account, so make each new submission's key unique:
+#    header: you get the first job back instead of a second one to pay for. A key names
+#    its job for 24 h. Generate each new submission's key, do not write one yourself:
 #    `python3 -c 'import uuid; print(uuid.uuid4())'` (uuidgen is missing on many hosts).
 JOB=$(curl -s "${H[@]}" -X POST $BASE/v1/predictions -H 'Content-Type: application/json' \
   -d '{"model":"boltz2","name":"mytarget","sequence":"MKTAYIAKQRQISFVKSHFSRQLEE"}' \
@@ -222,7 +222,11 @@ res = jf.get(f"/v1/jobs/{job['id']}/results").json()
   residues. Guided folds take longer and are billed for the time they run.
 - **Fast mode is off by default.** Send `"fast": true` for higher throughput; it may be
   slightly less accurate. The workbench turns it on for humans, the API never does it for
-  you. ESMFold-2 is the exception: it always runs fast here and its job says so.
+  you. ESMFold-2 is the exception: omitted means fast for it, and `"fast": false` runs its
+  normal mode.
+- `recycling_steps` is capped at 10, or 20 on ESMFold-2. On Boltz-2, ESMFold-2, OpenFold3
+  and OpenBind-0 it counts recycles after a first trunk pass (N runs N+1 passes; for
+  ESMFold-2 it equals Biohub's `num_loops`).
 - `GET /v1/models` lists every model, protocol, parameter, and the current limits.
 
 ## Design binders (BoltzGen, RFdiffusion3, PXDesign or RFD4-Proteina)

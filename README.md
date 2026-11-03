@@ -77,4 +77,5 @@ See [`SKILL.md`](SKILL.md) for endpoints, examples, and limits.
 Fast mode is **off** unless the agent sends `"params": {"fast": true}`. It gives higher
 throughput and may be slightly less accurate. The workbench turns it on for people clicking
 through; the API and this skill leave it off so a scripted run gets the accurate path.
-ESMFold-2 always runs fast on this hardware, and its job records `fast: true`.
+ESMFold-2 is the exception: an omitted `fast` means fast for it, and `"fast": false` runs its
+normal mode.
