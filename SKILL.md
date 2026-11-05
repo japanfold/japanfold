@@ -63,6 +63,8 @@ Works from any agent/harness: use `curl` (Bash) or your language's HTTP client
 (`httpx`/`requests`, `fetch`, `net/http`, …), whatever your environment has.
 A terminal can also use the CLI: `pip install japanfold`, then `japanfold --help`
 (same key, `--json` on every command, `wait JOB_ID` blocks until a job ends).
+Many separate proteins from the CLI are one job too: `japanfold fold proteins.fasta --each --wait`
+folds every FASTA record as its own target (japanfold >= 1.1.0).
 If your environment sandboxes network egress (e.g. Claude Science), approve the
 host **`api.japanfold.aiand.com`** when prompted.
 
@@ -90,6 +92,7 @@ H=(-H 'X-JapanFold-Client: skill' -H "Authorization: Bearer $JAPANFOLD_API_KEY")
 JOB=$(curl -s "${H[@]}" -X POST $BASE/v1/predictions -H 'Content-Type: application/json' \
   -d '{"model":"boltz2","name":"mytarget","sequence":"MKTAYIAKQRQISFVKSHFSRQLEE"}' \
   | python3 -c 'import sys,json; r=json.load(sys.stdin); print(r["id"]) if "id" in r else sys.exit(r["detail"])')
+: "${JOB:?submit failed, see the message above}"   # a script stops here instead of polling an empty job id
 
 # 2. wait. `?wait=60` holds the GET until the job finishes or 60 s pass, so loop on it
 #    with no sleep: each call returns the moment the job is done. The first job on a
@@ -332,6 +335,7 @@ Submit → wait → download, same as predict/design:
 JOB=$(curl -s "${H[@]}" -X POST $BASE/v1/embeddings -H 'Content-Type: application/json' \
   -d '{"model":"esmc-600m","sequence":"MKTAYIAKQRQISFVKSHFSRQLEE"}' \
   | python3 -c 'import sys,json; r=json.load(sys.stdin); print(r["id"]) if "id" in r else sys.exit(r["detail"])')
+: "${JOB:?submit failed, see the message above}"   # a script stops here instead of polling an empty job id
 
 curl -s "${H[@]}" "$BASE/v1/jobs/$JOB?wait=60"     # repeat until status is terminal
 curl -s "${H[@]}" $BASE/v1/jobs/$JOB/results       # -> sequences: [{id, length, file}, ...]
