@@ -6,7 +6,7 @@ embed sequences from your AI agent, via the
 [japanfold.aiand.com/account/token](https://japanfold.aiand.com/account/token) and set
 `JAPANFOLD_API_KEY`.
 **No local GPU.** Runs Boltz-2 / ESMFold-2 / OpenFold3 /
-OpenBind-0 / RoseTTAFold3 / OpenDDE for structures, AF2-IG for scoring a binder you
+OpenBind-0 / RoseTTAFold3 / OpenDDE / Mol-1 for structures, AF2-IG for scoring a binder you
 already designed, BoltzGen / RFdiffusion3 /
 PXDesign / RFD4-Proteina for design, and ESMC / SaProt for embeddings, on Tenstorrent.
 

@@ -2,7 +2,7 @@
 name: japanfold
 description: >-
   Predict 3D biomolecular structures and binding affinity (Boltz-2, ESMFold-2,
-  OpenFold3, OpenBind-0, RoseTTAFold3, OpenDDE), score a binder you
+  OpenFold3, OpenBind-0, RoseTTAFold3, OpenDDE, Mol-1), score a binder you
   already designed against its target (AF2-IG), design de-novo
   binders/proteins (BoltzGen, RFdiffusion3, PXDesign, RFD4-Proteina),
   scaffold a functional motif around a pasted structure, and compute ESMC or
@@ -34,8 +34,8 @@ allowed-tools:
 # JapanFold: hosted structure prediction and binder design
 
 JapanFold runs Boltz-2 / ESMFold-2 / OpenFold3 / OpenBind-0 / RoseTTAFold3 /
-OpenDDE (structure prediction; Boltz-2 also does affinity, OpenBind-0 and RoseTTAFold3
-co-fold ligands, OpenDDE is protein-complex / antibody-antigen docking), AF2-IG (scores a
+OpenDDE / Mol-1 (structure prediction; Boltz-2 also does affinity, OpenBind-0, RoseTTAFold3
+and Mol-1 co-fold ligands, OpenDDE is protein-complex / antibody-antigen docking), AF2-IG (scores a
 binder you already designed), BoltzGen / RFdiffusion3 /
 PXDesign / RFD4-Proteina (binder design), and ESMC / SaProt (protein-language-model
 embeddings) on Tenstorrent
@@ -165,12 +165,14 @@ res = jf.get(f"/v1/jobs/{job['id']}/results").json()
   `rf3` (RoseTTAFold3: proteins, RNA/DNA and ligands, no covalent modifications or
   binding constraints from this input format), and the OpenDDE family, `opendde`
   (general protein-complex checkpoint) and `opendde-abag` (antibody-antigen
-  checkpoint), both protein-only with MSA on by default, no affinity.
+  checkpoint), both protein-only with MSA on by default, no affinity, and `mol1`
+  (Mol-1, model by Molence: an AlphaFold3-family model for proteins, DNA, RNA, ligands
+  and ions, MSA on by default, 20 recycles, 200 steps and 5 samples by default, no affinity).
   `opendde-abag`'s accuracy is verified to match the reference OpenDDE
   implementation: strong on standard antibody-antigen complexes, and it shares
   the reference's own limitation on some hard targets (a checkpoint
   characteristic, not a port defect). For binding affinity use `boltz2`. For
-  ligands, `boltz2`, `openbind`, `rf3` or the `esmfold2` pair;
+  ligands, `boltz2`, `openbind`, `rf3`, `mol1` or the `esmfold2` pair;
   add `openfold3` for DNA/RNA without ligands.
 - **`af2ig` takes a different input from all of the above.** AlphaFold2 initial-guess
   scores a binder you already designed, so instead of a chain list its target `content` is
@@ -407,9 +409,9 @@ pae = m["pae"]; contacts = m["contact_probs"] if "contact_probs" in side["arrays
 - The one size limit is **each model's residue ceiling per structure**, the
   largest size the engine is measured to fold on this hardware: 1920 for
   Boltz-2, 1664 for ESMFold-2, 1664 for ESMFold-2 Fast,
-  1664 for OpenFold3, 1664 for OpenBind-0, 1600 for RoseTTAFold3, 1536 for OpenDDE · General
-  and 1536 for OpenDDE · Antibody-Antigen, and 1024 for every other folding model
-  (AF2-IG counts the target plus the binder). Design is bounded the same way: RFdiffusion3's contig
+  1664 for OpenFold3, 1664 for OpenBind-0, 1600 for RoseTTAFold3, 1536 for OpenDDE · General,
+  1536 for OpenDDE · Antibody-Antigen, and 1024 for every other folding model
+  (Mol-1 included; AF2-IG counts the target plus the binder). Design is bounded the same way: RFdiffusion3's contig
   (motif + designed regions) caps at 1536, PXDesign's target chains plus
   binder at 1536, RFD4-Proteina's contig at 512, and `binder_length` is 8-200. `GET /v1/models` publishes each
   model's `max_residues`. Over a cap → `400` naming the model and its
