@@ -29,6 +29,16 @@ standard, so it installs into **any** compatible harness with one command.
 
 ## Install
 
+Using Claude? [Use JapanFold in Claude](https://japanfold.aiand.com/docs/claude/) covers
+claude.ai, Desktop, mobile, Claude Code, Claude Science and the Claude API, and has a
+**Connect to Claude** button that adds the connector in one click.
+
+In Claude Code, install the plugin in one step (Claude Code 2.1.275 or later):
+
+```text
+/plugin install japanfold --marketplace japanfold/japanfold
+```
+
 One line installs it everywhere the open standard is supported: **Claude Code,
 Cursor, Codex, Gemini CLI, Cline, Windsurf, Copilot, Amp and the rest**:
 
@@ -43,8 +53,8 @@ npx skills add japanfold/japanfold -g       # global: every project / new chat
   `curl -fsSL --create-dirs -o ~/.claude/skills/japanfold/SKILL.md https://japanfold.aiand.com/skill.md`.
   A web-fetch tool returns only a summary of the page, so an agent should use curl too.
 
-**Claude Science** manages skills in-app (no installer): **Customize → Skills**,
-add from this repo (or paste `SKILL.md`) and **publish** it. Or skip install
+**Claude Science** imports it in-app: **Settings > Skills > Add skill > Import from GitHub**,
+then `japanfold/japanfold`. Or skip install
 entirely: the API is public and self-describing, so just ask:
 *"use the JapanFold API at `api.japanfold.aiand.com` to fold …"*.
 

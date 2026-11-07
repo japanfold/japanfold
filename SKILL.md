@@ -11,19 +11,13 @@ description: >-
   protein with a ligand and get affinity, design nanobody/antibody/peptide/
   miniprotein binders against a target, turn a sequence into a PDB/mmCIF
   structure, or get a fixed-size embedding vector for search/clustering/ML
-  features. Needs a JapanFold API key; no local GPU.
-when_to_use: >-
-  When the user wants to fold/predict a protein or complex structure, estimate
-  protein–ligand binding affinity, design binders against a target, or compute
-  protein embeddings, when a hosted service is fine (no local model to run).
+  features, whenever a hosted service is fine. Needs a JapanFold API key; no
+  local GPU.
 license: Apache-2.0
-category: biomodels
 metadata:
-  third_party:
-    - kind: service
-      name: JapanFold API
-      provider: JapanFold
-      info_url: https://japanfold.aiand.com
+  category: biomodels
+  provider: JapanFold
+  info-url: https://japanfold.aiand.com
 # allowed-tools is a Claude Code convenience (grants curl/python without a
 # prompt); other harnesses ignore it and use their own execution/permission model.
 allowed-tools:
@@ -76,6 +70,8 @@ endpoints below. Follow a job with `get_job` and `wait=100`: one call holds up t
 fetches every result file; run it rather than calling `get_artifact` per file. To add the server to Claude Code:
 `claude mcp add --transport http japanfold https://api.japanfold.aiand.com/mcp --header "Authorization: Bearer $JAPANFOLD_API_KEY"`.
 claude.ai / Claude Desktop / ChatGPT: add `https://api.japanfold.aiand.com/mcp` as a connector and sign in, no key needed.
+Setup for every Claude surface (claude.ai, Claude Code, Claude Science, the Claude API) is at
+https://japanfold.aiand.com/docs/claude/.
 
 ## Predict a structure
 
