@@ -113,6 +113,11 @@ cat job.json                                  # -> {"status":"succeeded|failed|c
 curl -s "${H[@]}" $BASE/v1/jobs/$JOB/results
 curl -fsLOJ "${H[@]}" $BASE/v1/jobs/$JOB/archive        # zip: structures + results.json
 curl -fsL "${H[@]}" -o "$F" "$BASE/v1/jobs/$JOB/artifacts/$F"  # one file named in results; -L follows to storage
+
+# Past jobs, newest first; ?status=failed lists only failures, each with its `error`.
+curl -s "${H[@]}" "$BASE/v1/jobs?status=failed&limit=20"
+# What a job was submitted with (sequences, structures, contigs), beside its `error`.
+curl -s "${H[@]}" "$BASE/v1/jobs/$JOB/input"
 ```
 
 **Multi-chain complexes** (e.g. insulin's A+B chains) go in the `input` YAML,
