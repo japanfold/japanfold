@@ -59,8 +59,11 @@ A terminal can also use the CLI: `pip install japanfold`, then `japanfold --help
 (same key, `--json` on every command, `wait JOB_ID` blocks until a job ends).
 Many separate proteins from the CLI are one job too: `japanfold fold proteins.fasta --each --wait`
 folds every FASTA record as its own target (japanfold >= 1.1.0).
-If your environment sandboxes network egress (e.g. Claude Science), approve the
-host **`api.japanfold.aiand.com`** when prompted.
+If your environment sandboxes network egress, the host to allow is
+**`api.japanfold.aiand.com`**; every result file comes from it. In Claude Science, call
+`request_network_access` for that host before the first request. Claude Science has no
+credential slot for a JapanFold key, so there the MCP server below is the way in: it
+signs in through the browser and needs no key.
 
 **MCP.** The same API is an MCP server at `https://api.japanfold.aiand.com/mcp`.
 If the `japanfold` MCP tools (`create_prediction`, `get_job`, `get_results`, ...)
@@ -69,7 +72,7 @@ endpoints below. Follow a job with `get_job` and `wait=100`: one call holds up t
 100 s for it to end. A succeeded `get_job` carries `download`, one shell command that
 fetches every result file; run it rather than calling `get_artifact` per file. To add the server to Claude Code:
 `claude mcp add --transport http japanfold https://api.japanfold.aiand.com/mcp --header "Authorization: Bearer $JAPANFOLD_API_KEY"`.
-claude.ai / Claude Desktop / ChatGPT: add `https://api.japanfold.aiand.com/mcp` as a connector and sign in, no key needed.
+claude.ai / Claude Desktop / Claude Science / ChatGPT: add `https://api.japanfold.aiand.com/mcp` as a connector and sign in, no key needed.
 Setup for every Claude surface (claude.ai, Claude Code, Claude Science, the Claude API) is at
 https://japanfold.aiand.com/docs/claude/.
 
@@ -143,7 +146,7 @@ curl -s "${H[@]}" -X POST $BASE/v1/predictions -H 'Content-Type: application/jso
 }'
 ```
 
-Python-kernel equivalent (Claude Science, notebooks):
+Python equivalent (notebooks, scripts):
 
 ```python
 import os, httpx

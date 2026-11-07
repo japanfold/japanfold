@@ -53,10 +53,11 @@ npx skills add japanfold/japanfold -g       # global: every project / new chat
   `curl -fsSL --create-dirs -o ~/.claude/skills/japanfold/SKILL.md https://japanfold.aiand.com/skill.md`.
   A web-fetch tool returns only a summary of the page, so an agent should use curl too.
 
-**Claude Science** imports it in-app: **Settings > Skills > Add skill > Import from GitHub**,
-then `japanfold/japanfold`. Or skip install
-entirely: the API is public and self-describing, so just ask:
-*"use the JapanFold API at `api.japanfold.aiand.com` to fold …"*.
+**Claude Science**: add the MCP server under **Settings > Connectors > Add connector >
+Remote**, URL `https://api.japanfold.aiand.com/mcp`, and sign in when the browser opens
+(no key). For the skill too, **Settings > Skills > Add skill > Import from GitHub**,
+`japanfold/japanfold`. Or skip install entirely: the API is public and self-describing,
+so just ask: *"use the JapanFold API at `api.japanfold.aiand.com` to fold …"*.
 
 ## Use
 
