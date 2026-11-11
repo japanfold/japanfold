@@ -286,6 +286,17 @@ curl -s "${H[@]}" -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
        "contig":"A1-150,60-80","params":{"num_designs":4}}'
 ```
 
+A finished `rfd3-scaffold` job scores and ranks its own designs, so read
+`GET /v1/jobs/{id}/results` and sort by `final_rank` instead of downloading the
+structures to measure them. Each design carries `motif_rmsd` (the kept motif
+against the structure you sent, in Angstrom, `0.0` means held), `num_chains` with
+`chains_expected` beside it (they differ when the output came back in the wrong
+number of pieces; a binder contig legitimately expects two), `designed_length`
+and `designed_sequence`. The rank is the distance from `chains_expected`, then
+`motif_rmsd`, a structural
+sanity order and not a confidence score: RFdiffusion3 produces none. If you need
+confidence, refold a design as its own prediction job and read its pLDDT.
+
 **PXDesign** generates binder backbones against a target structure, conditioned
 on a distogram of the chains you name. Fastest of the three. Protocol:
 `pxdesign-binder`. Params: `num_designs`, `n_step`, `seed`.
@@ -440,6 +451,7 @@ pae = m["pae"]; contacts = m["contact_probs"] if "contact_probs" in side["arrays
   `Retry-After` and a `wait_refused` field saying no hold happened; pause that many
   seconds before the next call. Otherwise never
   `sleep` between waits, the hold already paces the loop. From a shell, `japanfold wait JOB` does the same loop.
+  A queued or running job carries this call as `wait.url`, ready to paste.
 - Errors are RFC 9457 problem+json (`title`, `detail`).
 - **`401` with `sign_in_required: true`** means no key or a bad one. If
   `JAPANFOLD_API_KEY` is set, send it as `Authorization: Bearer $JAPANFOLD_API_KEY`;
