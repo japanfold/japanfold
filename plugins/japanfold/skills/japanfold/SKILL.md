@@ -98,7 +98,9 @@ JOB=$(curl -s "${H[@]}" -X POST $BASE/v1/predictions -H 'Content-Type: applicati
 #    processor also loads the model's weights. When the service is busy the job carries
 #    `queue`: its `reason`, how many `accounts_ahead` and the fleet's chip counts. That
 #    is a real wait, not a stall, so keep waiting. It has no time estimate, so do not
-#    invent one.
+#    invent one. A design job runs for minutes, longer than many agent shells let one
+#    command live (Claude Code stops it at 2 min): there, run this loop in the
+#    background or make one `?wait=60` call per command, never `sleep` between them.
 while :; do
   S=$(curl -s "${H[@]}" "$BASE/v1/jobs/$JOB?wait=60" | tee job.json \
       | python3 -c 'import sys,json; print(json.load(sys.stdin).get("status"))')
