@@ -360,9 +360,10 @@ curl -s "${H[@]}" -X POST $BASE/v1/embeddings -H 'Content-Type: application/json
 }'
 ```
 
-- **Models:** `esmc-300m`, `esmc-600m` (default), `esmc-6b`. Larger trunks give
-  a stronger representation at higher compute cost per sequence. Plus
-  `saprot-650m` and `saprot-1.3b`, trained on a joint sequence + structure
+- **Models** (vector length in brackets): `esmc-300m` (960), `esmc-600m` (1152,
+  default), `esmc-6b` (2560). Larger trunks give a stronger representation at
+  higher compute cost per sequence. Plus `saprot-650m` and `saprot-1.3b` (1280
+  each), trained on a joint sequence + structure
   vocabulary and run sequence-only here. SaProt is a different representation
   from ESMC, often stronger for stability and function prediction.
 - `params`: `pool` (`mean` default, `max`, `cls`: how per-residue vectors combine
@@ -371,7 +372,7 @@ curl -s "${H[@]}" -X POST $BASE/v1/embeddings -H 'Content-Type: application/json
 - Results: `manifest.json` (model/pool/shapes/dtype) plus one `<id>.npz` per
   sequence (or one shared `embeddings.parquet`). No structure, no MSA, only the
   language-model trunk, so these are the cheapest jobs.
-- `GET /v1/models` lists the embedding models and params too.
+- `GET /v1/models` lists the embedding models (with `dim`) and params too.
 
 ## Reading results
 
