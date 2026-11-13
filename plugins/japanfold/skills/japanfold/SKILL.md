@@ -37,18 +37,27 @@ hardware behind an HTTP API hosted in Japan. You call it as an async job
 (**submit → wait → download**) over plain HTTPS against
 `https://api.japanfold.aiand.com`. No model to install and no local GPU.
 
-**Key.** Every call needs one, read from `JAPANFOLD_API_KEY` (and
-`JAPANFOLD_BASE_URL` if the user was given another endpoint). If it is not set,
+**Key.** Every call needs one. Look in your environment before anything else:
+`[ -n "$JAPANFOLD_API_KEY" ] && echo set`. If it is set, it is the user's key,
+so use it (and `JAPANFOLD_BASE_URL` if that is set too). Only if it is unset,
 send the user to `https://japanfold.aiand.com/account/token`: they sign in with
 an email address and the page shows a key, and a new account comes with $100.
 Never ask for the key in the chat. The user sets it in their own shell and
 restarts you from there; a key pasted into a chat goes to the model provider.
-For the same reason never print it: check it with `[ -n "$JAPANFOLD_API_KEY" ]`,
-not `echo`, and pass it as `$JAPANFOLD_API_KEY` rather than writing its value
-into a command.
+For the same reason never print it (test it with `[ -n ... ]`, not `echo`) and
+pass it as `$JAPANFOLD_API_KEY` rather than writing its value into a command.
 Work is billed per processor hour of chip time, taken from that balance;
 `GET /v1/credits` returns the balance, the rate and `billing_url`, the page where
-a person adds funds. What was spent in a period
+a person adds funds. Asked what a job will cost, read `typical_cost` on the
+model or protocol in `GET /v1/models`. For a prediction, multiply
+`usd_per_target_p90` by the number of targets that will be submitted: each target
+runs on its own chip, and that per-target figure is what past jobs (last 7 days)
+cost at most of the time. The per-job `usd_p50`/`usd_p90` follow whatever batch
+sizes users sent that week, so do not quote them as the price of a prediction of
+another size. A design or embedding job splits its own work across chips and has
+per-job figures only; quote those as what a typical job cost. Say it is history,
+not a quote. Do not derive a ceiling from the rate and the runtime limit.
+What was spent in a period
 is `GET /v1/usage?from=YYYY-MM-DD&to=YYYY-MM-DD&limit=1`: `summary.amount` is
 the total in US dollars (`summary.currency`), and `summary.by_model` splits it
 per model. Quote `amount`; every `*_micros` field is millionths of a dollar.
@@ -202,7 +211,9 @@ res = jf.get(f"/v1/jobs/{job['id']}/results").json()
 - For complexes / protein–ligand affinity / multiple chains, pass a **Boltz YAML**
   string as `input` (`sequences:` with `protein`/`dna`/`rna`/`ligand` chains;
   `properties:` for the affinity head).
-- `params`: `use_msa_server` (on by default for Boltz-2), `fast`, `recycling_steps`,
+- `params`: `use_msa_server` (Boltz-2 cannot fold without one, so a `false` is put back to
+  `true` and the job's `warnings` say so; for an MSA-free fold, as when you refold a design
+  to check it against its own sequence, use ESMFold-2 or OpenFold3), `fast`, `recycling_steps`,
   `sampling_steps`, `diffusion_samples`, `output_format`, `seed` (default 0, echoed on the
   job), `use_tfg_guidance` (OpenDDE only, see below), `write_pae` (every prediction model: returns `<name>_pae.npz` with the full PAE
   matrix and, where the model computes them, PDE and contact probabilities; see Reading
@@ -231,6 +242,28 @@ res = jf.get(f"/v1/jobs/{job['id']}/results").json()
   A wrong contact pulls the antibody to the wrong place, so tell the user to leave out
   pairs they are unsure of; an epitope with `min_fraction` below 1 tolerates a few wrong
   residues. Guided folds take longer and are billed for the time they run.
+- **Guided folding (Mol-1).** If the user knows a binding site, specific contacts or a
+  region that must stay clear, add a top-level `constraints:` list to the YAML on `mol1`.
+  Any mix of three blocks; residues are `[chain, 1-based position in the sent sequence]`:
+
+  ```yaml
+  constraints:
+    - site:        # these residues should touch the partner chains (<= 4.5 A)
+        source_chains: [A]
+        partner_chains: [L]
+        residue_ids: [[A, 12], [A, 16]]
+    - contact:     # these pairs should touch (<= 4.5 A); or token_pairs: [[i, j]], 0-based tokens
+        pairs: [[[A, 71], [B, 149]]]
+    - exclusion:   # these residues should stay away from the partner chains (> 6.0 A)
+        source_chains: [A]
+        partner_chains: [L]
+        residue_ids: [[A, 40]]
+  ```
+
+  Mol-1 then folds on its constraint weights. It conditions on the request and does not
+  enforce it, so check the geometry in the result. A contact the true structure does not
+  have gets pulled in anyway and can clash, so tell the user to leave out pairs they are
+  unsure of. Billed like any Mol-1 fold.
 - **Fast mode is off by default.** Send `"fast": true` for higher throughput; it may be
   slightly less accurate. The workbench turns it on for humans, the API never does it for
   you. ESMFold-2 is the exception: omitted means fast for it, and `"fast": false` runs its
@@ -286,15 +319,17 @@ curl -s "${H[@]}" -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
        "contig":"A1-150,60-80","params":{"num_designs":4}}'
 ```
 
-A finished `rfd3-scaffold` job scores and ranks its own designs, so read
-`GET /v1/jobs/{id}/results` and sort by `final_rank` instead of downloading the
-structures to measure them. Each design carries `motif_rmsd` (the kept motif
-against the structure you sent, in Angstrom, `0.0` means held), `num_chains` with
+A finished `rfd3-scaffold` or `rfd4-scaffold` job scores and ranks its own designs,
+so read `GET /v1/jobs/{id}/results` and sort by `final_rank` instead of downloading
+the structures to measure them. Each design carries `motif_rmsd` (the kept motif
+against the structure you sent, in Angstrom; RFdiffusion3 copies the kept
+coordinates so a held motif reads `0.0`, RFD4-Proteina conditions on them instead
+so a held motif reads a few tenths, compare designs within a job), `num_chains` with
 `chains_expected` beside it (they differ when the output came back in the wrong
 number of pieces; a binder contig legitimately expects two), `designed_length`
 and `designed_sequence`. The rank is the distance from `chains_expected`, then
 `motif_rmsd`, a structural
-sanity order and not a confidence score: RFdiffusion3 produces none. If you need
+sanity order and not a confidence score: neither model produces one. If you need
 confidence, refold a design as its own prediction job and read its pLDDT.
 
 **PXDesign** generates binder backbones against a target structure, conditioned
@@ -340,8 +375,10 @@ or nanobody CDR, keep the framework either side of the loop in one run and the a
 as its own chain: `"A9-40, 8, A50-93, /0, B3-15"` designs 8 CDR residues between kept
 framework A9-40 and A50-93, against partner chain B. Two kept ranges of one chain must
 not be split by `/0`, which would ask for two output chains with the same name.
-`hotspots` is optional. Designs are unranked, so refold the ones you like with
-a prediction and read `iptm`.
+`hotspots` is optional. Designs come back scored and ranked like RFdiffusion3's
+(`motif_rmsd`, `num_chains` against `chains_expected`, `final_rank`), measured in the
+file's own numbering; for a confidence number, refold the ones you like with a
+prediction and read `iptm`.
 
 `model` is optional but must match the protocol's engine, else `400`. Wait the
 same way; `/v1/jobs/{id}/results` returns the designs.
