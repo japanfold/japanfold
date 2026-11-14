@@ -313,7 +313,11 @@ own model or an edited file.
 **RFdiffusion3** runs all-atom diffusion directly around a target structure you
 paste in, with a contig saying what stays fixed and what gets designed. Protocols:
 `rfd3-binder`, `rfd3-scaffold`, `rfd3-na-binder`. Params: `num_designs`,
-`num_timesteps`, `seed`.
+`num_timesteps`, `seed`. A contig keeps protein and nucleic-acid residues only:
+ions, ligands, waters and modified residues like MSE are dropped before the contig
+is read, so naming one is a 400 at submit. Keep a zinc finger and you keep the
+residues that coordinate the metal, not the metal; rename a modified residue to its
+standard parent (MSE to MET) if you need it in the motif.
 
 ```bash
 curl -s "${H[@]}" -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
