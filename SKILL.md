@@ -203,6 +203,8 @@ res = jf.get(f"/v1/jobs/{job['id']}/results").json()
     chain: B
   ```
 
+  That YAML is one target's `content`, sent like any other `targets` entry:
+  `{"model":"af2ig","name":"d1","targets":[{"name":"d1","content":"<the YAML above>"}]}`.
   The binder chain has to be in the structure and the same length as the sequence: AF2-IG
   re-predicts the complex from those coordinates. The result row carries `plddt`, `ptm`,
   `iptm`, `pae`, `ipae` and `interface_pae` (Angstrom). `iptm` and `interface_pae` are what
@@ -369,12 +371,16 @@ have a PDB. The contig reads left to right: a bare number or range designs that 
 residues, `/0` starts a new chain, a chain-range like `A2-115` keeps that part of the
 structure. Chain and residue ids are the file's own (`label_asym_id` / `label_seq_id`),
 which can differ from what a viewer shows; a contig matching no atoms is refused at
-submit. The contig always keeps something: RFD4 designs against a structure here, so
+submit, as is a kept chain whose `label_seq_id` column is empty (`.`) -- fill it in with
+`gemmi convert` or use the mmCIF as RCSB serves it. The contig always keeps something:
+RFD4 designs against a structure here, so
 `"60-60"` with nothing preserved is refused rather than queued. To redesign an antibody
 or nanobody CDR, keep the framework either side of the loop in one run and the antigen
 as its own chain: `"A9-40, 8, A50-93, /0, B3-15"` designs 8 CDR residues between kept
 framework A9-40 and A50-93, against partner chain B. Two kept ranges of one chain must
-not be split by `/0`, which would ask for two output chains with the same name.
+not be split by `/0`, which would ask for two output chains with the same name, and they
+must not be written side by side either (`"A9-40, A50-93"`): put the residues that link
+them in between as a designed segment, as the example does.
 `hotspots` is optional. Designs come back scored and ranked like RFdiffusion3's
 (`motif_rmsd`, `num_chains` against `chains_expected`, `final_rank`), measured in the
 file's own numbering; for a confidence number, refold the ones you like with a
