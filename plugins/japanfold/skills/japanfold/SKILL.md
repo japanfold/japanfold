@@ -48,7 +48,9 @@ For the same reason never print it (test it with `[ -n ... ]`, not `echo`) and
 pass it as `$JAPANFOLD_API_KEY` rather than writing its value into a command.
 Work is billed per processor hour of chip time, taken from that balance;
 `GET /v1/credits` returns the balance, the rate and `billing_url`, the page where
-a person adds funds. Asked what a job will cost, read `typical_cost` on the
+a person adds funds. An organisation on monthly invoicing has `"pay": "invoice"`
+there instead of topping up; `GET /v1/billing` gives its spending limit, what is
+left, this month's usage and its invoices with pay links. Asked what a job will cost, read `typical_cost` on the
 model or protocol in `GET /v1/models`. For a prediction, multiply
 `usd_per_target_p90` by the number of targets that will be submitted: each target
 runs on its own chip, and that per-target figure is what past jobs (last 7 days)
@@ -505,5 +507,7 @@ pae = m["pae"]; contacts = m["contact_probs"] if "contact_probs" in side["arrays
   if there is none, or the 401 says it is revoked, send the user to
   `https://japanfold.aiand.com/account/token`.
 - **`402` with `out_of_credit: true`** means the balance is spent. Tell the user;
-  retrying will not help until they add funds.
+  retrying will not help until they add funds. On a monthly-invoicing account it
+  means the spending limit is reached: the `detail` says so, running jobs finish,
+  and new runs start once jobs end, an invoice is paid or ai& raises the limit.
 - Full machine-readable contract: `GET /v1/openapi.json`.
