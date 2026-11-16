@@ -175,7 +175,8 @@ res = jf.get(f"/v1/jobs/{job['id']}/results").json()
 
 - **Models:** `boltz2` (default; MSA + ligands + affinity), `esmfold2`,
   `esmfold2-fast` (single-sequence, fastest), which both co-fold ligands and
-  nucleic acids and neither predicts affinity; `openfold3` (the
+  nucleic acids next to a protein chain (DNA or RNA alone is a 400) and neither
+  predicts affinity; `openfold3` (the
   OpenFold Consortium's AlphaFold3 reproduction, preview weights; protein / RNA /
   DNA, no ligands or affinity), `openbind` (the same stack on the OpenBind-0
   checkpoint, which does co-fold ligands),
