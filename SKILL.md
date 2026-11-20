@@ -50,7 +50,14 @@ Work is billed per processor hour of chip time, taken from that balance;
 `GET /v1/credits` returns the balance, the rate and `billing_url`, the page where
 a person adds funds. An organisation on monthly invoicing has `"pay": "invoice"`
 there instead of topping up; `GET /v1/billing` gives its spending limit, what is
-left, this month's usage and its invoices with pay links. Asked what a job will cost, read `typical_cost` on the
+left, this month's usage and its invoices with pay links. Anything the user would
+email us about (monthly invoicing, a higher limit, a PO number, a volume price,
+credit, a question) is one call: `POST /v1/requests`, for example
+`{"kind": "terms", "limit_usd": 30000}` or
+`{"kind": "question", "topic": "capacity"}`; the answer arrives by email and on the
+account page. Switching to monthly invoicing means accepting ai&'s terms, so it is
+for a signed-in person on the account page: an API key gets `403 needs_person`
+with the link, which you pass to the user. Asked what a job will cost, read `typical_cost` on the
 model or protocol in `GET /v1/models`. For a prediction, multiply
 `usd_per_target_p90` by the number of targets that will be submitted: each target
 runs on its own chip, and that per-target figure is what past jobs (last 7 days)
@@ -513,5 +520,7 @@ pae = m["pae"]; contacts = m["contact_probs"] if "contact_probs" in side["arrays
 - **`402` with `out_of_credit: true`** means the balance is spent. Tell the user;
   retrying will not help until they add funds. On a monthly-invoicing account it
   means the spending limit is reached: the `detail` says so, running jobs finish,
-  and new runs start once jobs end, an invoice is paid or ai& raises the limit.
+  and new runs start once jobs end, an invoice is paid or the limit is raised
+  (a person on the account page, or `POST /v1/requests` with
+  `{"kind": "terms", "limit_usd": ...}`).
 - Full machine-readable contract: `GET /v1/openapi.json`.
