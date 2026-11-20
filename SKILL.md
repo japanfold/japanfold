@@ -387,7 +387,10 @@ as its own chain: `"A9-40, 8, A50-93, /0, B3-15"` designs 8 CDR residues between
 framework A9-40 and A50-93, against partner chain B. Two kept ranges of one chain must
 not be split by `/0`, which would ask for two output chains with the same name, and they
 must not be written side by side either (`"A9-40, A50-93"`): put the residues that link
-them in between as a designed segment, as the example does.
+them in between as a designed segment, as the example does. With more than one kept
+chain, declare them in the order the structure lists them, as that example does too:
+`"B3-15, 8, /0, A9-40"` is refused, because the model would read chains A and B as one
+molecule with nothing bonding them.
 `hotspots` is optional. Designs come back scored and ranked like RFdiffusion3's
 (`motif_rmsd`, `num_chains` against `chains_expected`, `final_rank`), measured in the
 file's own numbering; for a confidence number, refold the ones you like with a
