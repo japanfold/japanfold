@@ -1,18 +1,17 @@
 ---
 name: japanfold
+# slot skill.description
 description: >-
-  Predict 3D biomolecular structures and binding affinity (Boltz-2, ESMFold-2,
-  OpenFold3, OpenBind-0, RoseTTAFold3, OpenDDE, Mol-1), score a binder you
-  already designed against its target (AF2-IG), design de-novo
-  binders/proteins (BoltzGen, RFdiffusion3, PXDesign, RFD4-Proteina),
-  scaffold a functional motif around a pasted structure, and compute ESMC or
-  SaProt protein-language-model embeddings via JapanFold, a hosted,
-  Tenstorrent-accelerated HTTP API in Japan. Use to fold a protein or complex, co-fold a
-  protein with a ligand and get affinity, design nanobody/antibody/peptide/
-  miniprotein binders against a target, turn a sequence into a PDB/mmCIF
-  structure, or get a fixed-size embedding vector for search/clustering/ML
-  features, whenever a hosted service is fine. Needs a JapanFold API key; no
-  local GPU.
+  Predict 3D biomolecular structures and binding affinity (Boltz-2, ESMFold-2, OpenFold3, OpenBind-0, RoseTTAFold3, OpenDDE, AF2-IG and Mol-1), score a designed
+  binder against its target, design de-novo binders and proteins (BoltzGen, RFdiffusion3, PXDesign and RFD4-Proteina), scaffold a
+  functional motif around a pasted structure, and compute protein-language-model
+  embeddings (ESMC and SaProt) via JapanFold, a hosted, Tenstorrent-accelerated HTTP API in Japan.
+  Use to fold a protein or complex, co-fold a protein with a ligand and get affinity,
+  design nanobody/antibody/peptide/miniprotein binders against a target, turn a
+  sequence into a PDB/mmCIF structure, or get a fixed-size embedding vector for
+  search/clustering/ML features, whenever a hosted service is fine. Needs a JapanFold
+  API key; no local GPU.
+# /slot
 license: Apache-2.0
 metadata:
   category: biomodels
@@ -27,13 +26,13 @@ allowed-tools:
 
 # JapanFold: hosted structure prediction and binder design
 
-JapanFold runs Boltz-2 / ESMFold-2 / OpenFold3 / OpenBind-0 / RoseTTAFold3 /
-OpenDDE / Mol-1 (structure prediction; Boltz-2 also does affinity, OpenBind-0, RoseTTAFold3
-and Mol-1 co-fold ligands, OpenDDE is protein-complex / antibody-antigen docking), AF2-IG (scores a
-binder you already designed), BoltzGen / RFdiffusion3 /
-PXDesign / RFD4-Proteina (binder design), and ESMC / SaProt (protein-language-model
-embeddings) on Tenstorrent
-hardware behind an HTTP API hosted in Japan. You call it as an async job
+JapanFold runs these models on Tenstorrent hardware behind an HTTP API hosted in Japan:
+
+<!-- slot models.names -->
+Structures: Boltz-2, ESMFold-2, OpenFold3, OpenBind-0, RoseTTAFold3, OpenDDE, AF2-IG and Mol-1. Design: BoltzGen, RFdiffusion3, PXDesign and RFD4-Proteina. Embeddings: ESMC and SaProt.
+<!-- /slot -->
+
+You call it as an async job
 (**submit → wait → download**) over plain HTTPS against
 `https://api.japanfold.aiand.com`. No model to install and no local GPU.
 
@@ -168,37 +167,82 @@ curl -s "${H[@]}" -X POST $BASE/v1/predictions -H 'Content-Type: application/jso
 
 Python equivalent (notebooks, scripts):
 
-```python
-import os, httpx
-BASE = os.environ.get("JAPANFOLD_BASE_URL", "https://api.japanfold.aiand.com")
-jf = httpx.Client(base_url=BASE, headers={"X-JapanFold-Client": "skill",
-                  "Authorization": f"Bearer {os.environ['JAPANFOLD_API_KEY']}"},
-                  timeout=90)
-job = jf.post("/v1/predictions", json={"model": "boltz2", "sequence": "MKT..."}).json()
-while job["status"] not in ("succeeded", "failed", "canceled"):
-    job = jf.get(f"/v1/jobs/{job['id']}", params={"wait": 60}).json()  # held, no sleep
-res = jf.get(f"/v1/jobs/{job['id']}/results").json()
+From Python, the `japanfold` package (stdlib only) runs the same loop:
+
+<!-- slot snippet.quickstart -->
+```bash
+pip install japanfold
+export JAPANFOLD_API_KEY=jf_live_...      # from https://japanfold.aiand.com/account/token
 ```
 
-- **Models:** `boltz2` (default; MSA + ligands + affinity), `esmfold2`,
-  `esmfold2-fast` (single-sequence, fastest), which both co-fold ligands and
-  nucleic acids next to a protein chain (DNA or RNA alone is a 400) and neither
-  predicts affinity; `openfold3` (the
-  OpenFold Consortium's AlphaFold3 reproduction, preview weights; protein / RNA /
-  DNA, no ligands or affinity), `openbind` (the same stack on the OpenBind-0
-  checkpoint, which does co-fold ligands),
-  `rf3` (RoseTTAFold3: proteins, RNA/DNA and ligands, no covalent modifications or
-  binding constraints from this input format), and the OpenDDE family, `opendde`
-  (general protein-complex checkpoint) and `opendde-abag` (antibody-antigen
-  checkpoint), both protein-only with MSA on by default, no affinity, and `mol1`
-  (Mol-1, model by Molence: an AlphaFold3-family model for proteins, DNA, RNA, ligands
-  and ions, MSA on by default, 20 recycles, 200 steps and 5 samples by default, no affinity).
-  `opendde-abag`'s accuracy is verified to match the reference OpenDDE
-  implementation: strong on standard antibody-antigen complexes, and it shares
-  the reference's own limitation on some hard targets (a checkpoint
-  characteristic, not a port defect). For binding affinity use `boltz2`. For
-  ligands, `boltz2`, `openbind`, `rf3`, `mol1` or the `esmfold2` pair;
-  add `openfold3` for DNA/RNA without ligands.
+```python
+import japanfold as jf
+
+r = jf.run("boltz2", "complex.yaml", diffusion_samples=5)   # blocks until done
+r.path      # this input's files, under the model's own file names
+r.metrics   # one dict per ranked output, best first
+r.cost      # dollars billed for the job
+
+job = jf.submit("esmfold2", "MKTAYIAKQRQISFVKSHFSRQ")       # returns once admitted
+print(job.id)                                              # jf.Job(id).result() later
+r = job.result()
+
+for r in jf.map("boltz2", ["a.yaml", "b.yaml"], max_parallel=4):   # in input order
+    print(r.error or r.path)
+```
+
+That is the whole API: `run`, `submit`, `map`, `Job`, `Result` and `Error`. The client knows no
+model: any id `japanfold models` lists works, and every keyword other than `name`, `out`,
+`timeout` and `max_parallel` is that model's parameter, sent as given. The input is a file path,
+the text itself (FASTA, YAML, a sequence, a PDB/mmCIF, `pdb:1ABC`) or a dict sent as YAML; a
+path-shaped string that names no file raises `FileNotFoundError` instead of being billed.
+
+Results land in `./japanfold/<name>/` (`out=` changes the parent), where the name is `name=`,
+else the input file's stem, else the job id. Running the same call again reads that directory
+back without a request, and a resubmit after a crash gets the same job back rather than a second
+bill. `map` returns a failed or refused input as `r.error` and carries on; a 401 or 402 raises at once,
+and leaving the loop early cancels the jobs still running. `run` and `job.result()` raise
+`jf.Error`. Progress goes to the `japanfold` logger at INFO.
+
+`japanfold run MODEL INPUT --param key=value` is the same call from the shell.
+<!-- /slot -->
+
+The models (`model`), as `GET /v1/models` lists them:
+
+<!-- slot models.predict -->
+- `boltz2` (Boltz-2, up to 1920 residues, MSA always): Folds protein, DNA, RNA and ligand complexes and predicts binding affinity. Uses a multiple-sequence alignment (MSA) for best accuracy. The most capable model: choose it when in doubt, or whenever you need ligands, nucleic acids, affinity or constraints.
+- `esmfold2` (ESMFold-2, up to 1664 residues, MSA on by default): Language-model folding, no MSA required, though it will use one if supplied for extra accuracy. Co-folds DNA, RNA and ligand chains with at least one protein chain; it predicts no binding affinity. A quick, lightweight choice for a protein structure or a small cocrystal.
+- `esmfold2-fast` (ESMFold-2 Fast, up to 1664 residues, MSA never): ESMFold-2 tuned for maximum throughput: always single-sequence, and it co-folds ligands and nucleic acids like the standard checkpoint. Accuracy is typically very close to ESMFold-2, and it is the model to reach for when screening thousands of sequences at once.
+- `openfold3` (OpenFold3, up to 1664 residues, MSA on by default): The OpenFold Consortium's open AlphaFold3 reproduction, running fully on-device. Folds multi-chain complexes of proteins, RNA and DNA using a multiple-sequence alignment by default (turn it off to fold single-sequence). No ligands and no affinity: for ligands on this same stack use OpenBind-0, for affinity Boltz-2. The published weights are a preview checkpoint trained to 155k steps, well short of the full AlphaFold3 schedule, so read the confidence scores before trusting a prediction.
+- `openbind` (OpenBind-0, up to 1664 residues, MSA on by default): The OpenFold Consortium's OpenBind-0 checkpoint on the OpenFold3 architecture, running fully on-device. Unlike the OpenFold3 preview weights it co-folds small-molecule ligands alongside proteins, RNA and DNA, using a multiple-sequence alignment by default. It predicts structure and confidence, not binding affinity. For affinity use Boltz-2.
+- `rf3` (RoseTTAFold3, up to 1600 residues, MSA on by default): The Baker lab's RoseTTAFold3, running fully on-device. Folds multi-chain complexes of proteins, RNA, DNA and small-molecule ligands, using a multiple-sequence alignment by default (turn it off to fold single-sequence). Structure only: no binding affinity, and no covalent modifications or binding constraints from this input format. For those use Boltz-2.
+- `opendde` (OpenDDE · General, up to 1536 residues, MSA on by default): OpenDDE with its general protein-complex checkpoint. Co-folds multi-chain protein complexes on the Protenix-v2 stack plus a structural-token expander, using an MSA by default. Protein-only (no ligands, nucleic acids or affinity). For binding affinity, use Boltz-2; for ligands or DNA/RNA, use Boltz-2.
+- `opendde-abag` (OpenDDE · Antibody-Antigen, up to 1536 residues, MSA on by default): OpenDDE with its antibody-antigen checkpoint selected. Co-folds an antibody (Fab heavy/light) with its antigen on the Protenix-v2 stack, using an MSA by default. Protein-only, no affinity. Accuracy is verified to match the reference OpenDDE implementation: strong on standard antibody-antigen complexes, and it shares the reference's own limitation on some hard targets (a checkpoint characteristic, not a port defect), so don't expect uniformly high accuracy on every antibody-antigen input.
+- `af2ig` (AF2-IG, up to 1024 residues, MSA never): AlphaFold2 initial-guess, the filter a binder-design pipeline uses to tell a real design from a plausible one. Give it a design you already have, meaning a structure carrying the target chain and the binder backbone plus the binder's sequence. It re-predicts the complex from those coordinates and reports ipTM and interface pAE for the interface. Paste it as `target:` (with the structure inline) and `binder:`; a chain list is a different input and it is refused. No alignment and no sampling: the same input gives the same answer. It runs Google DeepMind's AlphaFold2 parameters (params_model_1_ptm, 2022-12-06 release), licensed under CC BY 4.0.
+- `mol1` (Mol-1, up to 1024 residues, MSA on by default): Mol-1, model by Molence. Predicts the 3D structure of complexes of proteins, DNA, RNA and small molecules (CCD codes or SMILES). It is derived from Protenix with a wider pair track and runs fully on-device. Uses a multiple-sequence alignment by default (turn it off to fold single-sequence). Reports pLDDT, pTM, ipTM and PAE. For binding affinity, use Boltz-2.
+<!-- /slot -->
+
+Prediction `params`; not every model takes every one, so read `caps` in `GET /v1/models`. A param
+the model cannot honour comes back as a 400 naming both. A model whose MSA is `always` puts a
+`use_msa_server: false` back to `true` and says so in the job's `warnings`. Leave
+`recycling_steps` and `sampling_steps` out unless you mean to override a model's own value;
+`recycling_steps` counts recycles after a first trunk pass (N runs N+1 passes), capped per model
+at the model's `param_max`.
+
+<!-- slot params.predict -->
+| Key | Type | Default | Range | What it does |
+|---|---|---|---|---|
+| `use_msa_server` | bool | `true` | - | Build a multiple-sequence alignment (MSA) of related sequences for the input. It improves accuracy; each model's card says whether it needs one. |
+| `fast` | bool | `false` | - | Higher throughput, may be slightly less accurate. |
+| `recycling_steps` | int | model default | 1–10 | Trunk recycles. Leave empty to use each model's recommended value (Boltz-2, OpenFold3, OpenBind-0 and AF2-IG 3, Mol-1 20, the others 10). More can improve accuracy, at the cost of speed. |
+| `sampling_steps` | int | model default | 10–500 | Diffusion steps per structure. Leave empty to use each model's recommended value (ESMFold-2 100, RoseTTAFold3 50, the others 200). |
+| `diffusion_samples` | int | `1` | 1–5 | How many structures to generate per target. |
+| `output_format` | enum | `cif` | `cif`, `pdb` | Structure file format. PDB gives the chain id one column, so a longer chain name is rewritten A, B, C... and the originals are listed in a REMARK 999 block at the top of the file. mmCIF has no width limit and keeps the names you submitted. |
+| `seed` | int | `0` | 0–2147483647 | Noise seed for the diffusion sampler. The job reports the seed it ran with. |
+| `write_pae` | bool | `false` | - | Also return the top-ranked structure's confidence matrices as <name>_pae.npz: the full PAE matrix (key pae, the one Adaptyv's ipSAE pipeline reads), PDE and contact probabilities where the model computes them, with <name>_pae.json naming every array. Each model's list is under confidence in GET /v1/models. |
+| `use_tfg_guidance` | bool | `false` | - | Steer sampling with the input's constraint block: contact pairs or epitope residues the antibody must reach. The movable chains are moved as a rigid body during diffusion until the prediction agrees, and physics restraints apply on every step. Guided folds take longer and are billed for the time they run. |
+<!-- /slot -->
+
 - **`af2ig` takes a different input from all of the above.** AlphaFold2 initial-guess
   scores a binder you already designed, so instead of a chain list its target `content` is
   a structure plus the binder's sequence:
@@ -223,18 +267,6 @@ res = jf.get(f"/v1/jobs/{job['id']}/results").json()
 - For complexes / protein–ligand affinity / multiple chains, pass a **Boltz YAML**
   string as `input` (`sequences:` with `protein`/`dna`/`rna`/`ligand` chains;
   `properties:` for the affinity head).
-- `params`: `use_msa_server` (Boltz-2 cannot fold without one, so a `false` is put back to
-  `true` and the job's `warnings` say so; for an MSA-free fold, as when you refold a design
-  to check it against its own sequence, use ESMFold-2 or OpenFold3), `fast`, `recycling_steps`,
-  `sampling_steps`, `diffusion_samples`, `output_format`, `seed` (default 0, echoed on the
-  job), `use_tfg_guidance` (OpenDDE only, see below), `write_pae` (every prediction model: returns `<name>_pae.npz` with the full PAE
-  matrix and, where the model computes them, PDE and contact probabilities; see Reading
-  results). Not every model takes every one:
-  a param the model cannot honour comes back as a 400 naming both, so read `caps` in
-  `GET /v1/models` (no `fast` on OpenFold3, OpenBind-0 or RoseTTAFold3; no `use_msa_server`
-  on ESMFold-2 Fast, which has no MSA encoder; on AF2-IG only `recycling_steps`,
-  `output_format` and `write_pae`). Leave `recycling_steps` and `sampling_steps`
-  out unless you mean to override a model's own value.
 - **Guided antibody docking (OpenDDE).** If the user knows part of an antibody-antigen
   interface, add a top-level `constraint:` block to the YAML and send
   `"use_tfg_guidance": true` (on `opendde` or `opendde-abag` only). The antibody chains move
@@ -280,22 +312,24 @@ res = jf.get(f"/v1/jobs/{job['id']}/results").json()
   slightly less accurate. The workbench turns it on for humans, the API never does it for
   you. ESMFold-2 is the exception: omitted means fast for it, and `"fast": false` runs its
   normal mode.
-- `recycling_steps` is capped at 10, or 20 on ESMFold-2. On Boltz-2, ESMFold-2, OpenFold3
-  and OpenBind-0 it counts recycles after a first trunk pass (N runs N+1 passes; for
-  ESMFold-2 it equals Biohub's `num_loops`).
 - `GET /v1/models` lists every model, protocol, parameter, and the current limits.
 
-## Design binders (BoltzGen, RFdiffusion3, PXDesign or RFD4-Proteina)
+## Design binders
 
-Four design models, and you pick one. They take different inputs, so the choice
-comes first. `GET /v1/models` returns `design_models`, each model's `params`, and
+Pick the design model first: they take different inputs.
+
+<!-- slot models.design -->
+- `boltzgen` (BoltzGen, takes a `spec`, up to 1024 residues): Full binder-design pipeline: generate against a protein, small molecule, DNA or RNA target, then inverse-fold, refold, score and filter. You get a ranked top set with confidence metrics, ready to order. Protocols: `protein-anything`, `peptide-anything`, `nanobody-anything`, `antibody-anything`, `protein-small_molecule`, `protein-redesign`. Parameters: `num_designs`, `budget`, `fast`, `seed`.
+- `rfd3` (RFdiffusion3, takes a `contig`, up to 1536 residues): Designs directly in 3D around a target structure you provide (PDB/mmCIF plus a contig saying what stays fixed vs. what is designed): binders, motif scaffolds, DNA/RNA binders. Designs come back ordered on whether the output has the chains the contig asked for and how well the kept motif survived, which is a structural order and not a confidence one; refold designs with a Fold job to score them. Designed positions are named by the model's own sequence head, so each design comes back with a sequence. Treat it as a starting point: upstream recommends redesigning it with a tool like ProteinMPNN before ordering. One size caveat: on the target walked to the 1024 ceiling, designs at 768 and 832 total residues came back with a break in the designed backbone, where 640, 704 and 896-1024 did not, so check the designed chain is continuous before using a design in that range. Protocols: `rfd3-binder`, `rfd3-scaffold`, `rfd3-na-binder`. Parameters: `num_designs`, `num_timesteps`, `seed`.
+- `pxdesign` (PXDesign, takes a `chains`, up to 1536 residues): Generates binder backbones against a target structure, conditioned on a distogram of the target. Fast, and the output is a backbone only: no sequence, no ranking, no confidence score. Take the coordinates to a sequence-design tool before ordering anything. For a ranked, sequenced binder use BoltzGen. Protocols: `pxdesign-binder`. Parameters: `num_designs`, `n_step`, `seed`.
+- `rfd4` (RFD4-Proteina, takes a `contig`, up to 512 residues): Designs all-atom proteins around a target structure you provide (mmCIF plus a contig saying what stays fixed and what is designed): binders, motif scaffolds, antibody and nanobody CDR loops. Every design is made against a target, so the contig always keeps something. A trunk integrates a flow in an autoencoder's latent space and the decoder writes coordinates and a sequence in one step, so each design comes back with a sequence. Designs come back ordered on the kept motif and the chain count, which is a structural order and not a confidence one; refold designs with a Fold job to score them. How much thinking a design gets is a knob (the recipe), not a fixed cost. Protocols: `rfd4-binder`, `rfd4-scaffold`. Parameters: `num_designs`, `recipe`, `nsteps`, `seed`.
+<!-- /slot -->
+
+ `GET /v1/models` returns `design_models`, each model's `params`, and
 each protocol's `engine`.
 
 **BoltzGen** takes a target described in a YAML spec and returns a ranked,
-filtered top set with confidence metrics. Protocols: `protein-anything`,
-`peptide-anything`, `nanobody-anything`, `antibody-anything`,
-`protein-small_molecule`, `protein-redesign`. Params: `num_designs`, `budget`,
-`fast`, `seed` (omit it for a fresh draw; give one to get the same designs back).
+filtered top set with confidence metrics.
 
 ```bash
 curl -s "${H[@]}" -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
@@ -321,9 +355,7 @@ paste text only for a structure that is not in the PDB or AlphaFold DB, such as 
 own model or an edited file.
 
 **RFdiffusion3** runs all-atom diffusion directly around a target structure you
-paste in, with a contig saying what stays fixed and what gets designed. Protocols:
-`rfd3-binder`, `rfd3-scaffold`, `rfd3-na-binder`. Params: `num_designs`,
-`num_timesteps`, `seed`. A contig keeps protein and nucleic-acid residues only:
+paste in, with a contig saying what stays fixed and what gets designed. A contig keeps protein and nucleic-acid residues only:
 ions, ligands, waters and modified residues like MSE are dropped before the contig
 is read, so naming one is a 400 at submit. Keep a zinc finger and you keep the
 residues that coordinate the metal, not the metal; rename a modified residue to its
@@ -349,8 +381,7 @@ sanity order and not a confidence score: neither model produces one. If you need
 confidence, refold a design as its own prediction job and read its pLDDT.
 
 **PXDesign** generates binder backbones against a target structure, conditioned
-on a distogram of the chains you name. Fastest of the three. Protocol:
-`pxdesign-binder`. Params: `num_designs`, `n_step`, `seed`.
+on a distogram of the chains you name.
 
 **It returns a backbone with no sequence:** coordinates only, no ranking, no
 confidence score. Every binder residue is written as GLY with only N/CA/C/O,
@@ -369,9 +400,7 @@ curl -s "${H[@]}" -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
 
 **RFD4-Proteina** also takes a pasted structure plus a contig, and decodes
 coordinates and a sequence in one step, so every design comes back sequenced.
-Protocols: `rfd4-binder`, `rfd4-scaffold`. Params: `num_designs`, `recipe`
-(`thinking_low` / `thinking_medium` / `thinking_high`, 120 / 180 / 300 trunk
-passes a design, cost follows), `nsteps`, `seed`.
+
 
 ```bash
 curl -s "${H[@]}" -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
@@ -406,7 +435,7 @@ prediction and read `iptm`.
 `model` is optional but must match the protocol's engine, else `400`. Wait the
 same way; `/v1/jobs/{id}/results` returns the designs.
 
-## Compute protein embeddings (ESMC, SaProt)
+## Compute protein embeddings
 
 Submit → wait → download, same as predict/design:
 
@@ -433,15 +462,26 @@ curl -s "${H[@]}" -X POST $BASE/v1/embeddings -H 'Content-Type: application/json
 }'
 ```
 
-- **Models** (vector length in brackets): `esmc-300m` (960), `esmc-600m` (1152,
-  default), `esmc-6b` (2560). Larger trunks give a stronger representation at
-  higher compute cost per sequence. Plus `saprot-650m` and `saprot-1.3b` (1280
-  each), trained on a joint sequence + structure
-  vocabulary and run sequence-only here. SaProt is a different representation
-  from ESMC, often stronger for stability and function prediction.
-- `params`: `pool` (`mean` default, `max`, `cls`: how per-residue vectors combine
-  into one fixed-size vector), `format` (`npz` default: per-residue + pooled, one
-  file per sequence; `parquet`: pooled vectors only, one table), `fast`.
+Models:
+
+<!-- slot models.embed -->
+- `esmc-300m` (ESMC 300M, vector length 960, up to 2000 residues): The smallest ESMC variant: quickest embeddings, still a strong general-purpose protein representation.
+- `esmc-600m` (ESMC 600M, vector length 1152, up to 2000 residues): A larger ESMC trunk with a better representation than 300M, at modest extra cost. The default choice.
+- `esmc-6b` (ESMC 6B, vector length 2560, up to 1968 residues): The full-size ESMC model: the strongest embeddings, at higher compute cost per sequence.
+- `saprot-650m` (SaProt 650M, vector length 1280, up to 2000 residues): SaProt trained on sequence + structure tokens, run sequence-only here. A strong alternative representation to ESMC, especially for stability/function prediction.
+- `saprot-1.3b` (SaProt 1.3B, vector length 1280, up to 2000 residues): The largest SaProt variant. Unlike the smaller ones it is trained to work sequence-only, so nothing is lost without a structure input.
+<!-- /slot -->
+
+Embedding `params`:
+
+<!-- slot params.embed -->
+| Key | Type | Default | Range | What it does |
+|---|---|---|---|---|
+| `pool` | enum | `mean` | `mean`, `max`, `cls` | How per-residue embeddings are combined into one fixed-size vector per sequence. |
+| `format` | enum | `npz` | `npz`, `parquet` | npz: per-residue + pooled embeddings, one file per sequence. parquet: pooled vectors only, one table. |
+| `fast` | bool | `false` | - | Higher throughput, may be slightly less accurate. |
+<!-- /slot -->
+
 - Results: `manifest.json` (model/pool/shapes/dtype) plus one `<id>.npz` per
   sequence (or one shared `embeddings.parquet`). No structure, no MSA, only the
   language-model trunk, so these are the cheapest jobs.
@@ -485,19 +525,14 @@ pae = m["pae"]; contacts = m["contact_probs"] if "contact_probs" in side["arrays
 ## Limits & notes
 
 - The one size limit is **each model's residue ceiling per structure**, the
-  largest size the engine is measured to fold on this hardware: 1920 for
-  Boltz-2, 1664 for ESMFold-2, 1664 for ESMFold-2 Fast,
-  1664 for OpenFold3, 1664 for OpenBind-0, 1600 for RoseTTAFold3, 1536 for OpenDDE · General,
-  1536 for OpenDDE · Antibody-Antigen, and 1024 for every other folding model
-  (Mol-1 included; AF2-IG counts the target plus the binder). Design is bounded the same way: RFdiffusion3's contig
-  (motif + designed regions) caps at 1536, PXDesign's target chains plus
-  binder at 1536, RFD4-Proteina's contig at 512, and `binder_length` is 8-200. `GET /v1/models` publishes each
-  model's `max_residues`. Over a cap → `400` naming the model and its
-  ceiling. Numeric params are clamped to range.
+  largest size the engine is measured to fold on this hardware: `max_residues` in the lists
+  above and in `GET /v1/models` (AF2-IG counts the target plus the binder). Design is bounded
+  the same way, on the contig or the target chains plus binder, and `binder_length` is 8-200.
+  Over a cap → `400` naming the model and its ceiling. Numeric params are clamped to range.
 - **A model's ceiling is not its track record.** `GET /v1/models` reports both:
   `max_residues` is what will be accepted, `measured_wall` is the largest
   structure that model has actually run on this hardware, and it can be much
-  lower (AF2-IG accepts 1024 and has run 848). Sizes in between are taken
+  lower. Sizes in between are taken
   and tried on purpose, because a wall that moves with alignment depth or is not
   monotonic in residue count cannot honestly be a ceiling. Such a job is
   accepted with a `warnings` entry saying so, and if it does fail on device it

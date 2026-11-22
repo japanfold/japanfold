@@ -5,10 +5,11 @@ embed sequences from your AI agent, via the
 [JapanFold](https://japanfold.aiand.com) API. Get a key at
 [japanfold.aiand.com/account/token](https://japanfold.aiand.com/account/token) and set
 `JAPANFOLD_API_KEY`.
-**No local GPU.** Runs Boltz-2 / ESMFold-2 / OpenFold3 /
-OpenBind-0 / RoseTTAFold3 / OpenDDE / Mol-1 for structures, AF2-IG for scoring a binder you
-already designed, BoltzGen / RFdiffusion3 /
-PXDesign / RFD4-Proteina for design, and ESMC / SaProt for embeddings, on Tenstorrent.
+**No local GPU.** The models run on Tenstorrent in Japan:
+
+<!-- slot models.names -->
+Structures: Boltz-2, ESMFold-2, OpenFold3, OpenBind-0, RoseTTAFold3, OpenDDE, AF2-IG and Mol-1. Design: BoltzGen, RFdiffusion3, PXDesign and RFD4-Proteina. Embeddings: ESMC and SaProt.
+<!-- /slot -->
 
 Agents can call the API directly, no install needed:
 
@@ -20,8 +21,7 @@ curl -s https://api.japanfold.aiand.com/v1/predictions \
 ```
 
 Base URL `https://api.japanfold.aiand.com`, key in `Authorization: Bearer`.
-`GET /v1/models` lists the model ids to send (`boltz2`, `esmfold2`, `openfold3`, ...)
-with their size limits. The agent-readable summary is
+`GET /v1/models` lists the model ids to send with their size limits. The agent-readable summary is
 [`llms.txt`](https://japanfold.aiand.com/llms.txt).
 
 It's a single [`SKILL.md`](SKILL.md) built on the open [Agent Skills](https://agentskills.io)
