@@ -56,7 +56,10 @@ credit, a question) is one call: `POST /v1/requests`, for example
 `{"kind": "question", "topic": "capacity"}`; the answer arrives by email and on the
 account page. Switching to monthly invoicing means accepting ai&'s terms, so it is
 for a signed-in person on the account page: an API key gets `403 needs_person`
-with the link, which you pass to the user. Asked what a job will cost, read `typical_cost` on the
+with the link, which you pass to the user. When the user wants a colleague on
+the same account (one balance, one invoice), send them to People on the account
+page (`https://japanfold.aiand.com/account/people`): adding someone needs a signed-in person, and
+`GET /v1/account` lists who is on it as `members`. Asked what a job will cost, read `typical_cost` on the
 model or protocol in `GET /v1/models`. For a prediction, multiply
 `usd_per_target_p90` by the number of targets that will be submitted: each target
 runs on its own chip, and that per-target figure is what past jobs (last 7 days)
