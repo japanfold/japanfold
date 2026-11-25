@@ -55,7 +55,7 @@ npx skills add japanfold/japanfold -g       # global: every project / new chat
 
 **Claude Science**: add the MCP server under **Settings > Connectors > Add connector >
 Remote**, URL `https://api.japanfold.aiand.com/mcp`, and sign in when the browser opens
-(no key). For the skill too, **Settings > Skills > Add skill > Import from GitHub**,
+(the sign-in stands in for the API key). For the skill too, **Settings > Skills > Add skill > Import from GitHub**,
 `japanfold/japanfold`. Or skip install entirely: the API is public and self-describing,
 so just ask: *"use the JapanFold API at `api.japanfold.aiand.com` to fold …"*.
 
@@ -73,7 +73,8 @@ Or invoke it explicitly where supported: `/japanfold`.
 The API is also a remote MCP server at `https://api.japanfold.aiand.com/mcp`, listed in the
 [MCP Registry](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.japanfold) as
 `io.github.japanfold/japanfold`. claude.ai, Claude Desktop and ChatGPT add it as a connector and
-sign in, no key needed. Claude Code:
+sign in through the browser instead of pasting a key. Every
+other client sends the key. Claude Code:
 `claude mcp add --transport http japanfold https://api.japanfold.aiand.com/mcp --header "Authorization: Bearer $JAPANFOLD_API_KEY"`.
 
 To publish a new registry version, bump `version` in [`server.json`](server.json) and run
