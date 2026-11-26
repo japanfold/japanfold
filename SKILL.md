@@ -86,9 +86,9 @@ credential slot for a JapanFold key, so there the MCP server below is the way in
 signs in through the browser and needs no key.
 
 **MCP.** The same API is an MCP server at `https://api.japanfold.aiand.com/mcp`.
-If the `japanfold` MCP tools (`create_prediction`, `get_job`, `get_results`, ...)
-are available, use them instead of curl: they take the same fields as the
-endpoints below. Follow a job with `get_job` and `wait=100`: one call holds up to
+If the `japanfold` MCP tools (`create_job`, `get_job`, `get_results`, ...)
+are available, use them instead of curl: `create_job` takes the same
+`{model, input, params}` as `POST /v1/jobs` below. Follow a job with `get_job` and `wait=100`: one call holds up to
 100 s for it to end. A succeeded `get_job` carries `download`, one shell command that
 fetches every result file; run it rather than calling `get_artifact` per file. To add the server to Claude Code:
 `claude mcp add --transport http japanfold https://api.japanfold.aiand.com/mcp --header "Authorization: Bearer $JAPANFOLD_API_KEY"`.
@@ -103,13 +103,14 @@ Submit → wait until `status` is terminal → read results:
 ```bash
 BASE=${JAPANFOLD_BASE_URL:-https://api.japanfold.aiand.com}
 H=(-H 'X-JapanFold-Client: skill' -H "Authorization: Bearer $JAPANFOLD_API_KEY")
-# 1. submit: input is a bare `sequence`, one `input` FASTA/YAML string, or a `targets` list.
+# 1. submit {model, input, params}: one shape for every model. `input` is what the model
+#    reads: a bare sequence, one FASTA/YAML string, or a list of them (one target each).
 #    To retry a submit that timed out, resend it with the same `Idempotency-Key: <unique>`
 #    header: you get the first job back instead of a second one to pay for. A key names
 #    its job for 24 h. Generate each new submission's key, do not write one yourself:
 #    `python3 -c 'import uuid; print(uuid.uuid4())'` (uuidgen is missing on many hosts).
-JOB=$(curl -s "${H[@]}" -X POST $BASE/v1/predictions -H 'Content-Type: application/json' \
-  -d '{"model":"boltz2","name":"mytarget","sequence":"MKTAYIAKQRQISFVKSHFSRQLEE"}' \
+JOB=$(curl -s "${H[@]}" -X POST $BASE/v1/jobs -H 'Content-Type: application/json' \
+  -d '{"model":"boltz2","name":"mytarget","input":"MKTAYIAKQRQISFVKSHFSRQLEE"}' \
   | python3 -c 'import sys,json; r=json.load(sys.stdin); print(r["id"]) if "id" in r else sys.exit(r["detail"])')
 : "${JOB:?submit failed, see the message above}"   # a script stops here instead of polling an empty job id
 
@@ -142,28 +143,28 @@ curl -s "${H[@]}" "$BASE/v1/jobs/$JOB/input"
 ```
 
 **Multi-chain complexes** (e.g. insulin's A+B chains) go in the `input` YAML,
-one `protein` entry per chain, not the bare `sequence` field. A FASTA in `input` works
+one `protein` entry per chain, not a bare sequence. A FASTA in `input` works
 too, on every model, with any headers (`>insulin_a`, `>heavy chain`, a UniProt
 `>sp|P01308|INS_HUMAN ...`): a name the model can't hold becomes A, B, ... and the job's
 `warnings` say which record became which chain.
 
 ```bash
-curl -s "${H[@]}" -X POST $BASE/v1/predictions -H 'Content-Type: application/json' -d '{
+curl -s "${H[@]}" -X POST $BASE/v1/jobs -H 'Content-Type: application/json' -d '{
   "model":"boltz2","name":"human-insulin",
   "input":"sequences:\n  - protein: {id: A, sequence: GIVEQCCTSICSLYQLENYCN}\n  - protein: {id: B, sequence: FVNQHLCGSHLVEALYLVCGERGFFYTPKT}\n"
 }'
 ```
 
-**Many separate proteins** (a screen, a list of candidates) go in ONE job as a `targets`
-list, one entry each. Records inside a single `input` are chains of one complex, so never
+**Many separate proteins** (a screen, a list of candidates) go in ONE job as an `input`
+list, one entry each. Records inside a single `input` string are chains of one complex, so never
 paste a screen there. Each target gets its own structure, `<name>.pdb` with
 `output_format: pdb` (the default is mmCIF), and its own row in `results`, so one job
 covers the whole set:
 
 ```bash
-curl -s "${H[@]}" -X POST $BASE/v1/predictions -H 'Content-Type: application/json' -d '{
+curl -s "${H[@]}" -X POST $BASE/v1/jobs -H 'Content-Type: application/json' -d '{
   "model":"esmfold2-fast","name":"screen","params":{"output_format":"pdb"},
-  "targets":[{"name":"cand01","content":">cand01\nMQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEG"},
+  "input":[{"name":"cand01","content":">cand01\nMQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEG"},
              {"name":"cand02","content":">cand02\nTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIF"}]
 }'
 ```
@@ -260,8 +261,8 @@ at the model's `param_max`.
     chain: B
   ```
 
-  That YAML is one target's `content`, sent like any other `targets` entry:
-  `{"model":"af2ig","name":"d1","targets":[{"name":"d1","content":"<the YAML above>"}]}`.
+  That YAML is the job's `input`, sent like any other:
+  `{"model":"af2ig","name":"d1","input":"<the YAML above>"}`.
   The binder chain has to be in the structure and the same length as the sequence: AF2-IG
   re-predicts the complex from those coordinates. The result row carries `plddt`, `ptm`,
   `iptm`, `pae`, `ipae` and `interface_pae` (Angstrom). `iptm` and `interface_pae` are what
@@ -335,9 +336,9 @@ each protocol's `engine`.
 filtered top set with confidence metrics.
 
 ```bash
-curl -s "${H[@]}" -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
-  -d '{"model":"boltzgen","protocol":"protein-anything","params":{"num_designs":10},
-       "spec":"entities:\n  - protein: {id: A, sequence: <target sequence>}\n  - protein: {id: B, sequence: 60..80}\n"}'
+curl -s "${H[@]}" -X POST $BASE/v1/jobs -H 'Content-Type: application/json' \
+  -d '{"model":"protein-anything","params":{"num_designs":10},
+       "input":"entities:\n  - protein: {id: A, sequence: <target sequence>}\n  - protein: {id: B, sequence: 60..80}\n"}'
 ```
 
 The spec is a list under `entities:`, not predict's `sequences:`. Each chain is a
@@ -365,9 +366,9 @@ residues that coordinate the metal, not the metal; rename a modified residue to 
 standard parent (MSE to MET) if you need it in the motif.
 
 ```bash
-curl -s "${H[@]}" -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
-  -d '{"model":"rfd3","protocol":"rfd3-binder","structure":"pdb:<id> or <PDB/mmCIF text>",
-       "contig":"A1-150,60-80","params":{"num_designs":4}}'
+curl -s "${H[@]}" -X POST $BASE/v1/jobs -H 'Content-Type: application/json' \
+  -d '{"model":"rfd3-binder","input":"pdb:<id> or <PDB/mmCIF text>",
+       "params":{"contig":"A1-150,60-80","num_designs":4}}'
 ```
 
 A finished `rfd3-scaffold` or `rfd4-scaffold` job scores and ranks its own designs,
@@ -395,10 +396,9 @@ own reconstruction of the target onto the real target. That number says whether
 the conditioning worked.
 
 ```bash
-curl -s "${H[@]}" -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
-  -d '{"model":"pxdesign","protocol":"pxdesign-binder","structure":"pdb:<id> or <PDB/mmCIF text>",
-       "chains":"A","binder_length":80,"hotspots":"A64,A65,A66",
-       "params":{"num_designs":4}}'
+curl -s "${H[@]}" -X POST $BASE/v1/jobs -H 'Content-Type: application/json' \
+  -d '{"model":"pxdesign-binder","input":"pdb:<id> or <PDB/mmCIF text>",
+       "params":{"chains":"A","binder_length":80,"hotspots":"A64,A65,A66","num_designs":4}}'
 ```
 
 **RFD4-Proteina** also takes a pasted structure plus a contig, and decodes
@@ -406,9 +406,9 @@ coordinates and a sequence in one step, so every design comes back sequenced.
 
 
 ```bash
-curl -s "${H[@]}" -X POST $BASE/v1/designs -H 'Content-Type: application/json' \
-  -d '{"model":"rfd4","protocol":"rfd4-binder","structure":"pdb:<id> or <mmCIF text>",
-       "contig":"60-60, /0, A2-115","params":{"num_designs":4}}'
+curl -s "${H[@]}" -X POST $BASE/v1/jobs -H 'Content-Type: application/json' \
+  -d '{"model":"rfd4-binder","input":"pdb:<id> or <mmCIF text>",
+       "params":{"contig":"60-60, /0, A2-115","num_designs":4}}'
 ```
 
 **mmCIF only**: a pasted PDB is refused at submit, because the model conditions on
@@ -443,8 +443,8 @@ same way; `/v1/jobs/{id}/results` returns the designs.
 Submit → wait → download, same as predict/design:
 
 ```bash
-JOB=$(curl -s "${H[@]}" -X POST $BASE/v1/embeddings -H 'Content-Type: application/json' \
-  -d '{"model":"esmc-600m","sequence":"MKTAYIAKQRQISFVKSHFSRQLEE"}' \
+JOB=$(curl -s "${H[@]}" -X POST $BASE/v1/jobs -H 'Content-Type: application/json' \
+  -d '{"model":"esmc-600m","input":"MKTAYIAKQRQISFVKSHFSRQLEE"}' \
   | python3 -c 'import sys,json; r=json.load(sys.stdin); print(r["id"]) if "id" in r else sys.exit(r["detail"])')
 : "${JOB:?submit failed, see the message above}"   # a script stops here instead of polling an empty job id
 
@@ -454,13 +454,12 @@ curl -fsLOJ "${H[@]}" $BASE/v1/jobs/$JOB/archive   # zip: manifest.json + embedd
 curl -fsL "${H[@]}" -o "$F" "$BASE/v1/jobs/$JOB/artifacts/$F"  # one file, F = a sequences[].file
 ```
 
-Multiple sequences go in `sequences` (a list) or `input` (a FASTA/YAML blob, the
-same flexibility as predict's `input`):
+Multiple sequences go in `input` as a list, or as one FASTA/YAML blob:
 
 ```bash
-curl -s "${H[@]}" -X POST $BASE/v1/embeddings -H 'Content-Type: application/json' -d '{
+curl -s "${H[@]}" -X POST $BASE/v1/jobs -H 'Content-Type: application/json' -d '{
   "model":"esmc-600m",
-  "sequences":[{"id":"gfp","sequence":"MSKGEELFTGVVPILVELDGDVNGHKFSVSGEGEGDAT"},
+  "input":[{"id":"gfp","sequence":"MSKGEELFTGVVPILVELDGDVNGHKFSVSGEGEGDAT"},
                {"id":"lysozyme","sequence":"KVFGRCELAAAMKRHGLDNYRGYSLGNWVCAAKFESNF"}]
 }'
 ```

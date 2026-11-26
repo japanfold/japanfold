@@ -15,13 +15,13 @@ Agents can call the API directly, no install needed:
 
 ```bash
 export JAPANFOLD_API_KEY=jf_live_...          # from japanfold.aiand.com/account/token
-curl -s https://api.japanfold.aiand.com/v1/predictions \
+curl -s https://api.japanfold.aiand.com/v1/jobs \
   -H "Authorization: Bearer $JAPANFOLD_API_KEY" -H 'Content-Type: application/json' \
-  -d '{"model":"esmfold2","sequence":"MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQ"}'
+  -d '{"model":"esmfold2","input":"MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQ"}'
 ```
 
 Base URL `https://api.japanfold.aiand.com`, key in `Authorization: Bearer`.
-`GET /v1/models` lists the model ids to send with their size limits. The agent-readable summary is
+Every model takes the same `{model, input, params}`; `GET /v1/models` lists the model ids to send with their size limits. The agent-readable summary is
 [`llms.txt`](https://japanfold.aiand.com/llms.txt).
 
 It's a single [`SKILL.md`](skills/japanfold/SKILL.md) built on the open [Agent Skills](https://agentskills.io)
